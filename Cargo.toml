@@ -1,0 +1,11 @@
+[package]
+name = "dpm"
+version = "0.2.0"
+edition = "2021"
+
+[dependencies]
+walkdir = "2.5.0"
+md-5 = "0.10.6"
+
+[target.'cfg(unix)'.dependencies]
+users = "0.11"
