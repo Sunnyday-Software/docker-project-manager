@@ -1,7 +1,7 @@
 name: Versioning
 
 on:
-  pull_request:
+  push:
     branches:
       - testing
   workflow_dispatch:
