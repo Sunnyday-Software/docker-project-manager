@@ -6,7 +6,7 @@ authors = ["Diego Cattelan"]
 license = "GPL-3"
 readme = "README.md"
 repository = "https://github.com/Sunnyday-Software/docker-project-manager"
-rust-version = "1.85.1"
+rust-version = "1.85.0"
 
 [dependencies]
 walkdir = "2.5.0"
