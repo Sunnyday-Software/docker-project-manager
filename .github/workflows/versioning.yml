@@ -1,7 +1,7 @@
-name: Production Release
+name: Versioning
 
 on:
-  push:
+  pull_request:
     branches:
       - main
   workflow_dispatch:
@@ -9,13 +9,6 @@ on:
 permissions:
   contents: write
   pull-requests: write
-
-env:
-  CARGO_INCREMENTAL: 0
-  CARGO_NET_RETRY: 10
-  RUST_BACKTRACE: short
-  RUSTUP_MAX_RETRIES: 10
-  MACOSX_DEPLOYMENT_TARGET: 10.7
 
 jobs:
   release-please:
