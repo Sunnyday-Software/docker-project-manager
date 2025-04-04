@@ -1,7 +1,12 @@
 [package]
 name = "dpm"
-version = "0.1.2"
-edition = "2021"
+version = "0.0.1"
+edition = "2024"
+authors = ["Diego Cattelan"]
+license = "GPL-3"
+readme = "README.md"
+repository = "https://github.com/Sunnyday-Software/docker-project-manager"
+rust-version = "1.86"
 
 [dependencies]
 walkdir = "2.5.0"
