@@ -26,6 +26,7 @@ allow = [
     "Unlicense",
     "WTFPL",
     "Zlib",
+    "GPL-3.0-only"
 ]
 confidence-threshold = 0.8
 
