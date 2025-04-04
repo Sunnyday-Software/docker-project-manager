@@ -9,9 +9,9 @@ use md5::{Md5, Digest};
 
 
 #[cfg(unix)]
-use users::os::unix::UserExt;
+use uzers::os::unix::UserExt;
 #[cfg(unix)]
-use users::{get_current_uid, get_current_gid, get_user_by_uid};
+use uzers::{get_current_uid, get_current_gid, get_user_by_uid};
 
 #[cfg(unix)]
 fn get_user_ids() -> (u32, u32) {
