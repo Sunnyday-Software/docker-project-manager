@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/Sunnyday-Software/docker-project-manager/compare/v0.1.0...v0.1.1) (2025-04-04)
+
+
+### Bug Fixes
+
+* github action ([733ea82](https://github.com/Sunnyday-Software/docker-project-manager/commit/733ea82cc1c737a4b630f988f69f8033d750659b))
+
 ## 0.1.0 (2025-04-03)
 
 
