@@ -9,12 +9,30 @@ env:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            build-script: ./build-linux.sh
+          - os: macos-latest
+            build-script: ./build-macos.sh
+          - os: windows-latest
+            build-script: build-windows.bat
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --verbose
+    - name: Make build scripts executable (Unix)
+      if: runner.os != 'Windows'
+      run: chmod +x ./build-linux.sh ./build-macos.sh
+    - name: Build with OS-specific script
+      run: ${{ matrix.build-script }}
     - name: Run tests
       run: cargo test --verbose
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ runner.os }}-binaries
+        path: build/
