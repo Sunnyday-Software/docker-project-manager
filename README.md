@@ -28,16 +28,26 @@ triggers.
   Automatically fetches current UID/GID, ensuring file permission consistency
   across host and container.
 
+- ✅ **Semantic Versioning:**  
+  Tracks changes to Docker components using MD5 checksums and automatically 
+  updates version numbers (MAJOR.MINOR.PATCH) when changes are detected.
+
+- ✅ **Command-line Interface:**  
+  Flexible CLI with options for reading/writing environment files, updating 
+  versions, and executing Docker commands with the appropriate environment.
+
 ---
 
 ## 📦 Project Structure
 
 ```sh
 your-project-root/
-├── dev/docker/         # Directory scanned for docker images checksums
-├── .env                # Base environment file (default variables)
-├── .env.local          # Optional overrides for your local settings
-└── dpm                 # Docker Project Manager
+├── dev/docker/           # Directory scanned for docker images checksums
+├── dev/docker_versions/  # Directory for storing component version information
+├── .env                  # Base environment file (default variables)
+├── .env.local            # Optional overrides for your local settings
+├── .env.docker           # Generated environment file for Docker Compose
+└── dpm                   # Docker Project Manager executable
 ```
 
 ---
@@ -63,9 +73,37 @@ DOCKER_HOST_MAP=/var/run/docker.sock:/var/run/docker.sock
 > Only use `.env.local` to store sensitive data or settings specific to the
 > local environment.
 
-### 2. Automated Docker Environment Management
+### 2. Command-Line Interface
 
-Upon running, the utility automatically:
+The Docker Project Manager provides a flexible command-line interface with the following options:
+
+```bash
+dpm [OPTIONS] [-- DOCKER_ARGS...]
+```
+
+Options:
+- `-i, --input-env <FILE>` - File .env to read (default: .env.docker)
+- `-o, --output-env <FILE>` - File .env to write (required with --write-env)
+- `-w, --write-env` - Enable writing of the .env file
+- `-u, --update-versions` - Enable updating component versions
+- `-r, --run` - Enable execution of Docker command
+- `[DOCKER_ARGS...]` - Additional arguments to pass to Docker command
+
+Examples:
+```bash
+# Generate .env.docker file and update versions
+dpm -i .env.dev -o .env.docker -w -u
+
+# Generate .env.docker file, update versions, and run Docker build
+dpm -i .env.dev -o .env.docker -w -u -r build test
+
+# Just run Docker command using existing .env.docker
+dpm -i .env.docker -r compose up -d
+```
+
+### 3. Automated Docker Environment Management
+
+Upon running with the `-w` option, the utility automatically:
 
 - Scans directories inside `dev/docker`, calculates their MD5 checksums, and
   injects them as environment variables.
@@ -75,11 +113,18 @@ Upon running, the utility automatically:
 - Ensures necessary Docker socket mapping is correctly done depending on your
   OS (Linux/macOS/Windows).
 
----
+### 4. Version Management
 
-### 3. Generated Docker Environment
+When the `-u` option is used, the utility:
 
-Once executed, the utility generates a configuration file named `.env.docker`,
+- Compares the current MD5 checksums with previously stored values
+- If changes are detected, increments the PATCH version number
+- Stores the updated version information in the `dev/docker_versions` directory
+- Each component maintains its own version history
+
+### 5. Generated Docker Environment
+
+When executed with the `-w` option, the utility generates a configuration file (specified by `-o`),
 used internally by Docker Compose:
 
 Example `.env.docker`:
@@ -99,11 +144,33 @@ DOCKER_HOST_MAP=/var/run/docker.sock:/var/run/docker.sock
 
 Here's the execution sequence for clarity:
 
-- Checks the existence and merges `.env` → `.env.local` → `.env.docker`.
-- Computes MD5 checksums for directories under `dev/docker`.
-- Detects Docker socket and ensures correct mapping.
-- Executes Docker Compose commands transparently with pre-set correct
-  environment.
+1. **Environment File Processing**:
+   - Reads and merges variables from `.env` → `.env.local` → input file (specified by `-i`).
+   - Expands any environment variables in the values.
+
+2. **MD5 Checksum Calculation**:
+   - Scans all directories under `dev/docker`.
+   - Calculates MD5 checksums for each directory by hashing all files.
+   - Creates environment variables in the format `MD5_DIRECTORYNAME=checksum`.
+
+3. **System Configuration Detection**:
+   - Detects the operating system and configures platform-specific settings.
+   - On Unix systems, fetches current UID/GID and username.
+   - Detects Docker socket location based on the platform.
+
+4. **Version Management** (when `-u` is specified):
+   - Compares current MD5 checksums with previously stored values.
+   - If changes are detected, increments the PATCH version number.
+   - Updates version files in the `dev/docker_versions` directory.
+
+5. **Environment File Generation** (when `-w` is specified):
+   - Combines all variables from previous steps.
+   - Writes the complete environment to the output file (specified by `-o`).
+
+6. **Docker Command Execution** (when `-r` is specified):
+   - Sets up the Docker command with all environment variables.
+   - Configures Docker socket mapping based on the platform.
+   - Executes the specified Docker command with all arguments.
 
 ---
 
@@ -126,5 +193,5 @@ Here's the execution sequence for clarity:
 Feel free to contribute or raise issues via our GitHub Repository.
 
 
-Use Conventional Commit Specification for your commits
-[https://www.conventionalcommits.org/en/v1.0.0/](Conventional Commits)
+Use Conventional Commit Specification for your commits:
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)

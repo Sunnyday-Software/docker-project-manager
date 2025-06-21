@@ -1,544 +1,259 @@
-use clap::Parser;
-use md5::{Digest, Md5};
-use regex::{Captures, Regex};
+use clap::{Arg, ArgMatches, Command};
 use std::collections::HashMap;
-use std::error::Error;
-use std::fs::{File, OpenOptions};
-use std::io::{BufRead, BufReader, Read, Write};
-use std::path::{Path, PathBuf};
-use std::process::Command;
-use std::{env, fs, io};
-use walkdir::WalkDir;
 
-#[cfg(unix)]
-use uzers::get_current_username;
-#[cfg(unix)]
-use uzers::os::unix::UserExt;
-#[cfg(unix)]
-use uzers::{get_current_gid, get_current_uid, get_user_by_uid};
+mod cli_docs;
+mod docker;
+mod env_ops;
+mod file_ops;
+mod model;
+mod utils;
 
-#[cfg(unix)]
-fn get_user_ids() -> (u32, u32, String) {
-    (
-        get_current_uid(),
-        get_current_gid(),
-        get_current_username()
-            .and_then(|os_str| os_str.into_string().ok())
-            .unwrap_or_else(|| "".to_string()),
+use cli_docs::*;
+use docker::execute_docker_command;
+use env_ops::{combine_env_files, create_dir_env_map_and_calculate_md5};
+use file_ops::write_env_to_file;
+use model::*;
+use utils::{setup_project_paths, update_versions};
+
+/// Docker Project Manager - Manages Docker project pipelines
+/// with MD5 calculation, version updates and automated command execution.
+///
+/// This tool allows you to:
+/// - Read configurations from specific .env files
+/// - Calculate MD5 hashes of directories for versioning
+/// - Write .env files with dynamically calculated variables
+/// - Update Docker component versions
+/// - Execute Docker commands with appropriate configurations
+
+/// Builds the CLI programmatically using clap's Command builder
+fn build_cli() -> Command {
+  Command::new("dpm")
+    .author(CLI_AUTHOR)
+    .version(env!("CARGO_PKG_VERSION"))
+    .about(CLI_ABOUT)
+    .arg(
+      Arg::new("verbose")
+        .short('v')
+        .long("verbose")
+        .action(clap::ArgAction::SetTrue)
+        .help(CLI_VERBOSE_HELP),
+    )
+    .arg(
+      Arg::new("cfg")
+        .short('c')
+        .long("cfg")
+        .value_name("KEY=VALUE")
+        .action(clap::ArgAction::Append)
+        .help(CLI_CFG_HELP)
+        .long_help(CLI_CFG_LONG_HELP),
+    )
+    .arg(
+      Arg::new("input_env")
+        .short('i')
+        .long("input-env")
+        .value_name("FILE")
+        .default_value(DEFAULT_INPUT_ENV)
+        .help(CLI_INPUT_ENV_HELP)
+        .long_help(CLI_INPUT_ENV_LONG_HELP),
+    )
+    .arg(
+      Arg::new("output_env")
+        .short('o')
+        .long("output-env")
+        .value_name("FILE")
+        .help(CLI_OUTPUT_ENV_HELP)
+        .long_help(CLI_OUTPUT_ENV_LONG_HELP),
+    )
+    .arg(
+      Arg::new("write_env")
+        .short('w')
+        .long("write-env")
+        .action(clap::ArgAction::Count)
+        .help(CLI_WRITE_ENV_HELP)
+        .long_help(CLI_WRITE_ENV_LONG_HELP),
+    )
+    .arg(
+      Arg::new("update_versions")
+        .short('u')
+        .long("update-versions")
+        .action(clap::ArgAction::Count)
+        .help(CLI_UPDATE_VERSIONS_HELP)
+        .long_help(CLI_UPDATE_VERSIONS_LONG_HELP),
+    )
+    .arg(
+      Arg::new("run")
+        .short('r')
+        .long("run")
+        .action(clap::ArgAction::Count)
+        .help(CLI_RUN_HELP)
+        .long_help(CLI_RUN_LONG_HELP),
+    )
+    .arg(
+      Arg::new("args")
+        .value_name("ARGS")
+        .num_args(0..)
+        .trailing_var_arg(true)
+        .help(CLI_ARGS_HELP)
+        .long_help(CLI_ARGS_LONG_HELP),
     )
 }
 
-#[cfg(windows)]
-fn get_user_ids() -> (u32, u32, String) {
-    let username = env::var("USERNAME").unwrap_or_else(|_| "".to_string());
-    (0, 0, username)
-}
+/// Parses command line arguments and creates an execution plan
+///
+/// # Returns
+/// * `Result<ExecutionPlan, Box<dyn std::error::Error>>` - ExecutionPlan if parsing is successful, Err otherwise
+fn parse_arguments() -> Result<ExecutionPlan, Box<dyn std::error::Error>> {
+  // Command line parameter parsing
+  let matches = build_cli().get_matches();
 
-/// Struttura per gestire gli argomenti passati da riga di comando
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-struct Cli {
-    /// File .env da utilizzare
-    #[arg(short, long, default_value = ".env.docker")]
-    env: String,
+  // Extract verbose flag early so it can be used throughout
+  let verbose = matches.get_flag("verbose");
 
-    /// Abilita la scrittura del file .env
-    #[arg(short = 'w', long, default_value = "false")]
-    write_env: bool,
+  // Extract CLI arguments
+  let input_env = matches.get_one::<String>("input_env").unwrap().clone();
+  let output_env = matches.get_one::<String>("output_env").cloned();
+  let write_env_count = matches.get_count("write_env");
+  let update_versions_count = matches.get_count("update_versions");
+  let run_count = matches.get_count("run");
+  let args: Vec<String> = matches
+    .get_many::<String>("args")
+    .unwrap_or_default()
+    .cloned()
+    .collect();
 
-    /// Abilita l'aggiornamento delle versioni
-    #[arg(short, long, default_value = "false")]
-    update_versions: bool,
+  // Create execution plan
+  let mut plan = ExecutionPlan::new(input_env, output_env, args, verbose);
 
-    /// Tutti i parametri aggiuntivi che saranno passati direttamente al comando finale
-    #[arg(trailing_var_arg = true)]
-    args: Vec<String>,
-}
-
-fn read_env_file(path: &str) -> io::Result<HashMap<String, String>> {
-    let mut env_map = HashMap::new();
-    if Path::new(path).exists() {
-        let file = File::open(path)?;
-        let reader = BufReader::new(file);
-
-        for line in reader.lines() {
-            let line = line?;
-            // Salta le righe di commento o vuote
-            if line.starts_with('#') || line.trim().is_empty() {
-                continue;
-            }
-            if let Some((key, value)) = line.split_once('=') {
-                env_map.insert(key.to_string(), value.to_string());
-            }
-        }
-    }
-    Ok(env_map)
-}
-
-fn write_env_file(path: &str, env_map: &HashMap<String, String>) -> io::Result<()> {
-    let mut file = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .open(path)?;
-    let mut keys: Vec<_> = env_map.keys().collect();
-    keys.sort(); // Ordina le chiavi alfabeticamente
-
-    for key in keys {
-        if let Some(value) = env_map.get(key) {
-            writeln!(file, "{}={}", key, value)?;
-        }
-    }
-
-    Ok(())
-}
-
-fn compute_dir_md5(dir: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let path = Path::new(dir);
-
-    // Verifica che il percorso sia una directory esistente
-    if !path.is_dir() {
-        eprintln!("Errore: '{}' non è una directory valida o non esiste.", dir);
-        return Err("Directory non valida".into());
-    }
-
-    // Colleziona tutti i file nella directory, ricorsivamente
-    let mut file_paths = Vec::new();
-    for entry in WalkDir::new(dir).into_iter().filter_map(|e| e.ok()) {
-        if entry.file_type().is_file() {
-            file_paths.push(entry.path().to_owned());
-        }
-    }
-
-    // Ordina i percorsi dei file per garantire coerenza
-    file_paths.sort();
-
-    let mut md5_sums = Vec::new();
-
-    // Calcola l'MD5 di ogni file
-    for file_path in file_paths {
-        let mut file = File::open(&file_path)?;
-        let mut contents = Vec::new();
-        file.read_to_end(&mut contents)?;
-
-        let mut hasher = Md5::new();
-        hasher.update(&contents);
-        let result = hasher.finalize();
-
-        md5_sums.push(format!("{:x}", result));
-    }
-
-    // Concatenazione di tutti gli MD5
-    let concatenated_md5s = md5_sums.join("");
-
-    // Calcola l'MD5 della concatenazione
-    let mut final_hasher = Md5::new();
-    final_hasher.update(concatenated_md5s.as_bytes());
-    let final_result = final_hasher.finalize();
-    let final_md5 = format!("{:x}", final_result);
-
-    // Prende i primi 8 caratteri
-    let md5_short = &final_md5[..8];
-
-    Ok(md5_short.to_string())
-}
-
-fn socket_exists(path: &str) -> bool {
-    Path::new(path).exists()
-}
-
-#[cfg(unix)]
-fn get_home_directory() -> Option<PathBuf> {
-    let (uid, _, _) = get_user_ids();
-    get_user_by_uid(uid).and_then(|user| PathBuf::from(user.home_dir()).to_str().map(PathBuf::from))
-}
-
-#[cfg(windows)]
-fn get_home_directory() -> Option<PathBuf> {
-    return Option::None;
-}
-
-// Questa funzione carica in modo opzionale un file env,
-// ritornando una mappa vuota in caso il file non esista o non contenga variabili
-fn try_read_env_file(path: &str) -> io::Result<HashMap<String, String>> {
-    if Path::new(path).exists() {
-        read_env_file(path)
-    } else {
-        Ok(HashMap::new())
-    }
-}
-
-fn expand_env_vars(input: &HashMap<String, String>) -> HashMap<String, String> {
-    let re = Regex::new(r"\$\{(\w+)\}").unwrap();
-    let mut expanded_map = HashMap::new();
-
-    for (key, value) in input {
-        let mut has_missing_variable = false;
-
-        let expanded_value = re.replace_all(value, |caps: &Captures| {
-            let var_name = &caps[1];
-            match env::var(var_name) {
-                Ok(env_value) => env_value,
-                Err(_) => {
-                    has_missing_variable = true;
-                    String::new() // Anche se non effettivamente utilizzato, necessario per il closure
-                }
-            }
-        });
-
-        // Solo se tutte le variabili trovate avevano valori validi, inserisco la variabile
-        if !has_missing_variable {
-            expanded_map.insert(key.clone(), expanded_value.to_string());
-        }
-        // Altrimenti: variabile omessa secondo le specifiche
-    }
-
-    expanded_map
-}
-
-fn combine_env_files() -> io::Result<HashMap<String, String>> {
-    // legge variabili da .env, se presente
-    let mut combined_env = expand_env_vars(&try_read_env_file(".env")?);
-
-    // Controlla se il file .env contiene variabili che andrebbero da un'altra parte
-    if combined_env.contains_key("DOCKER_HOST_MAP") {
-        println!(
-            "Avviso: La variabile 'DOCKER_HOST_MAP' è presente in .env. Si consiglia di spostarla in .env.local."
-        );
-    }
-
-    if !combined_env.contains_key("PROJECT_NAME") {
-        println!("ERROR: La variabile 'PROJECT_NAME' non è presente in .env.");
-        combined_env.insert("PROJECT_NAME".to_string(), "NoName".to_string());
-    }
-
-    // legge variabili da .env.local, se presente, sovrascrivendo quelle precedenti
-    if Path::new(".env.local").exists() {
-        let local_env = expand_env_vars(&try_read_env_file(".env.local")?);
-        for (k, v) in local_env {
-            combined_env.insert(k, v);
-        }
-    }
-
-    Ok(combined_env)
-}
-
-fn process_docker_version(
-    docker_dir: &str,
-    current_md5: &str,
-    versions_dir: &str,
-) -> Result<(), Box<dyn Error>> {
-    let docker_dir_path = Path::new(docker_dir);
-    let version_file_name = match docker_dir_path.file_name() {
-        Some(name) => format!("{}.txt", name.to_string_lossy()),
-        None => return Err("Cannot determine docker directory name".into()),
-    };
-
-    let version_file_path = PathBuf::from(versions_dir).join(version_file_name);
-
-    // Leggiamo variabili precedenti, o creiamo nuove se file inesistente
-    let mut env_vars = if version_file_path.exists() {
-        read_env_file(version_file_path.to_str().unwrap())?
-    } else {
-        HashMap::new()
-    };
-
-    // Controlliamo MD5 esistente
-    let stored_md5 = env_vars.get("md5").unwrap_or(&String::new()).clone();
-
-    if stored_md5 == current_md5 {
-        println!(
-            "{} aggiornato, nessun avanzamento di versione necessario.",
-            docker_dir
-        );
-        return Ok(());
-    }
-
-    // MD5 diversi: aggiorniamo la versione PATCH
-    let major = env_vars
-        .get("v_major")
-        .and_then(|v| v.parse::<u32>().ok())
-        .unwrap_or(0);
-
-    let minor = env_vars
-        .get("v_minor")
-        .and_then(|v| v.parse::<u32>().ok())
-        .unwrap_or(0);
-
-    let patch = env_vars
-        .get("v_patch")
-        .and_then(|v| v.parse::<u32>().ok())
-        .unwrap_or(0)
-        + 1; // incrementiamo patch
-
-    // Aggiorniamo hashmap
-    env_vars.insert("md5".into(), current_md5.to_string());
-    env_vars.insert("v_major".into(), major.to_string());
-    env_vars.insert("v_minor".into(), minor.to_string());
-    env_vars.insert("v_patch".into(), patch.to_string());
-    env_vars.insert(
-        "v_full_version".into(),
-        format!("{}.{}.{}", major, minor, patch),
-    );
-
-    // Prepariamo eventualmente la cartella destinazione
-    fs::create_dir_all(&versions_dir)?;
-
-    // Scriviamo file aggiornato
-    write_env_file(version_file_path.to_str().unwrap(), &env_vars)?;
-
-    println!(
-        "{} aggiornato e avanzamento versione effettuato: {}.{}.{}",
-        docker_dir, major, minor, patch
-    );
-
-    Ok(())
-}
-
-fn display_help() {
-    println!("Nessuna azione richiesta. Utilizzo:");
-    println!("  -w, --write-env         Abilita la scrittura del file .env");
-    println!("  -u, --update-versions   Abilita l'aggiornamento delle versioni");
-    println!("  [args...]               Parametri aggiuntivi da passare al comando Docker");
-    println!("\nEsempio: {} -w -u", env::args().next().unwrap_or_else(|| "dpm".to_string()));
-}
-
-fn setup_project_paths() -> Result<(String, PathBuf), Box<dyn std::error::Error>> {
-    // Percorso del progetto host
-    let host_project_path = env::current_dir()?;
-    let host_project_path_str = host_project_path.to_str().ok_or("Percorso non valido")?;
-    println!("RUST Project builder");
-    println!("* host_project_path: {}", host_project_path_str);
-
-    let docker_dev_path = Path::new("./dev/docker");
-
-    println!("* docker_dev_path: {}", docker_dev_path.display());
-    println!("");
-    // Verifica che il percorso sia una directory
-    if !docker_dev_path.is_dir() {
-        eprintln!(
-            "Errore: '{}' non è una directory valida o non esiste.",
-            docker_dev_path.display()
-        );
-        return Err("Directory non valida".into());
-    }
-
-    Ok((host_project_path_str.to_string(), docker_dev_path.to_path_buf()))
-}
-
-fn write_env_to_file(
-    env_file: &str,
-    env_vars: &HashMap<String, String>,
-) -> Result<(), Box<dyn std::error::Error>> {
-    println!("Scrittura del file .env in corso...");
-    write_env_file(env_file, env_vars)?;
-    Ok(())
-}
-
-fn update_versions(
-    md5_values: &HashMap<String, String>,
-    versions_folder: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    println!("Aggiornamento delle versioni in corso...");
-    for (dir_path, md5_value) in md5_values {
-        process_docker_version(dir_path, md5_value, versions_folder)?;
-    }
-    Ok(())
-}
-
-fn execute_docker_command(
-    env_vars: &HashMap<String, String>,
-    existing_env_vars: &HashMap<String, String>,
-    args: &[String],
-) -> Result<(), Box<dyn std::error::Error>> {
-    // Prepara il comando Docker
-    let mut command = Command::new("docker");
-    command.args(&["compose", "run", "--rm", "--no-deps"]);
-
-    // Mapping dei volumi (adattato per compatibilità cross-platform)
-    if cfg!(target_os = "windows") {
-        // Su Windows, il socket Docker si gestisce diversamente o si omette
-        let docker_socket = "/var/run/docker.sock:/var/run/docker.sock";
-        command.args(&["-v", docker_socket]);
-        println!("Docker Socket mapping: {}", docker_socket);
-    } else {
-        // Controlla se esiste la variabile DOCKER_HOST nel file .env
-        if let Some(docker_host_map) = existing_env_vars.get("DOCKER_HOST_MAP") {
-            println!(
-                "Utilizzo DOCKER_HOST_MAP dal file .env: {}",
-                docker_host_map
+  // Parse command line arguments to determine operation order
+  let raw_args: Vec<String> = std::env::args().collect();
+  let mut i = 1; // Skip program name
+  while i < raw_args.len() {
+    let arg = &raw_args[i];
+    match arg.as_str() {
+      "-w" | "--write-env" => plan.add_operation(Operation::WriteEnv),
+      "-u" | "--update-versions" => plan.add_operation(Operation::UpdateVersions),
+      "-r" | "--run" => plan.add_operation(Operation::Run),
+      "-c" | "--cfg" => {
+        // Handle cfg operations in order
+        if i + 1 < raw_args.len() {
+          let cfg_value = &raw_args[i + 1];
+          if let Some((key, value)) = cfg_value.split_once('=') {
+            plan.add_operation(Operation::Config {
+              key: key.to_string(),
+              value: value.to_string(),
+            });
+          } else {
+            let error_msg = format!(
+              "Invalid configuration format: '{}'. Use key=value format",
+              cfg_value
             );
-            command.args(&["-v", &*docker_host_map]);
-        } else {
-            // Se non esiste, trova il primo socket disponibile
-            let home_directory = get_home_directory()
-                .ok_or("Impossibile determinare la home directory dell'utente corrente")?;
-            let docker_socket_path = if socket_exists("/var/run/docker.sock") {
-                "/var/run/docker.sock".to_string()
-            } else if socket_exists(&format!(
-                "{}/.docker/desktop/docker.sock",
-                home_directory.to_str().unwrap()
-            )) {
-                format!(
-                    "{}/.docker/desktop/docker.sock",
-                    home_directory.to_str().unwrap()
-                )
-            } else if let Ok(xdg_runtime_dir) = env::var("XDG_RUNTIME_DIR") {
-                format!("{}/docker.sock", xdg_runtime_dir)
-            } else {
-                "/var/run/docker.sock".to_string()
-            };
-            // Mapping dei volumi
-            let docker_socket = format!("{}:/var/run/docker.sock", docker_socket_path);
-            command.args(&["-v", &*docker_socket]);
-            println!("Docker Socket mapping: {}", docker_socket);
-        };
-    }
-
-    // Imposta le variabili d'ambiente nell'ambiente del processo
-    for (key, value) in env_vars {
-        command.env(key, value);
-        println!("* env key: {} = {}", key, value);
-    }
-
-    // Passa a Docker solo i nomi delle variabili d'ambiente
-    for key in env_vars.keys() {
-        command.args(&["-e", key]);
-    }
-
-    // Creazione della stringa concatenata di tutte le chiavi
-    let concatenated_keys = env_vars.keys().cloned().collect::<Vec<_>>().join(";");
-    command.env("DOCKER_ENV_KEYS", concatenated_keys);
-    command.args(&["-e", "DOCKER_ENV_KEYS"]);
-
-    // Specifica il servizio e il comando da eseguire
-    command.args(&["make", "make"]);
-
-    // Aggiunge eventuali argomenti aggiuntivi passati al programma
-    command.args(args);
-
-    // Stampa del comando completo (per il debug)
-    println!("Eseguendo il comando: {:?}", command);
-
-    // Esegue il comando Docker
-    let status = command.status()?;
-
-    if !status.success() {
-        eprintln!("Il comando Docker non è riuscito");
-        std::process::exit(1);
-    }
-
-    Ok(())
-}
-
-fn create_dir_env_map_and_calculate_md5(
-    docker_dev_path: &Path,
-    host_project_path_str: &str,
-) -> Result<(HashMap<String, String>, HashMap<String, String>, HashMap<String, String>), Box<dyn std::error::Error>> {
-    // Mappa delle directory e delle rispettive variabili d'ambiente
-    let mut dir_env_map = HashMap::new();
-
-    for entry in docker_dev_path.read_dir()? {
-        if let Ok(entry) = entry {
-            if entry.file_type()?.is_dir() {
-                if let Some(subdir_name) = entry.file_name().to_str() {
-                    let env_var = format!("MD5_{}", subdir_name.to_uppercase());
-                    let dir_path = entry.path().to_str().unwrap().to_string();
-                    dir_env_map.insert(env_var.clone(), dir_path.clone());
-                    println!(
-                        "* docker folder {} -> {}",
-                        env_var.clone(),
-                        dir_path.clone()
-                    );
-                }
-            }
+            return Err(error_msg.into());
+          }
+          i += 1; // Skip the cfg value
         }
+      },
+      "--" => break, // Stop parsing at -- separator
+      _ => {
+        // Handle long form arguments with =
+        if arg.starts_with("--cfg=") {
+          let cfg_value = &arg[6..]; // Skip "--cfg="
+          if let Some((key, value)) = cfg_value.split_once('=') {
+            plan.add_operation(Operation::Config {
+              key: key.to_string(),
+              value: value.to_string(),
+            });
+          } else {
+            let error_msg = format!(
+              "Invalid configuration format: '{}'. Use key=value format",
+              cfg_value
+            );
+            return Err(error_msg.into());
+          }
+        } else if arg.starts_with("-i")
+          || arg.starts_with("--input-env")
+          || arg.starts_with("-o")
+          || arg.starts_with("--output-env")
+        {
+          if arg.contains('=') {
+            // Long form with = (e.g., --input-env=file.env)
+            // No need to skip next arg
+          } else {
+            // Short form or long form without = (e.g., -i file.env)
+            i += 1; // Skip the value
+          }
+        }
+      }
     }
+    i += 1;
+  }
 
-    // HashMap per conservare le variabili d'ambiente da passare al comando Docker
-    let mut env_vars = HashMap::new();
-
-    // Calcola gli MD5 e prepara le variabili d'ambiente
-    let mut md5_values = HashMap::new();
-    for (env_var, dir_path) in &dir_env_map {
-        let md5_value = compute_dir_md5(dir_path)?;
-        env_vars.insert(env_var.to_string(), md5_value.clone());
-        md5_values.insert(dir_path.clone(), md5_value.clone());
-    }
-
-    // Aggiungi HOST_PROJECT_PATH alle variabili d'ambiente
-    env_vars.insert(
-        "HOST_PROJECT_PATH".to_string(),
-        host_project_path_str.to_string(),
+  if verbose && plan.has_operations() {
+    let operation_names = plan.operation_names();
+    println!(
+      "{}",
+      MSG_OPERATIONS_DETECTED.replace("{:?}", &format!("{:?}", operation_names))
     );
+  }
 
-    // Aggiungi UID e GID se su Linux/Mac
-    if cfg!(target_os = "linux") || cfg!(target_os = "macos") {
-        let (n_uid, n_gid, user_name) = get_user_ids();
-        let uid = n_uid.to_string();
-        let gid = n_gid.to_string();
+  // Check if any action flags have been set
+  if write_env_count == 0 && update_versions_count == 0 && run_count == 0 {
+    // Show complete help when no action is specified
+    let mut cmd = build_cli();
+    cmd.print_long_help()?;
+    println!(); // Empty line for separation
+    return Err("No operations specified".into());
+  }
 
-        env_vars.insert("HOST_UID".to_string(), uid);
-        env_vars.insert("HOST_GID".to_string(), gid);
-        env_vars.insert("HOST_USER".to_string(), user_name.to_string());
+  // Validation: if write_env is active, output_env must be specified
+  if write_env_count > 0 && plan.output_env.is_none() {
+    eprintln!("{}", ERROR_WRITE_ENV_REQUIRES_OUTPUT);
+    return Err(ERROR_MISSING_PARAMETERS.into());
+  }
+
+  if verbose {
+    println!("{}", MSG_INPUT_ENV_SELECTED.replace("{}", &plan.input_env));
+    if let Some(ref output_env) = plan.output_env {
+      println!("{}", MSG_OUTPUT_ENV_SELECTED.replace("{}", output_env));
     }
+    if !plan.args.is_empty() {
+      println!(
+        "{}",
+        MSG_ADDITIONAL_ARGS.replace("{:?}", &format!("{:?}", plan.args))
+      );
+    }
+  }
 
-    Ok((dir_env_map, env_vars, md5_values))
+  Ok(plan)
 }
 
+
+/// Main function of the program that manages the entire execution pipeline.
+///
+/// # Returns
+/// * `Result<(), Box<dyn std::error::Error>>` - Ok if all operations are completed successfully, Err otherwise
+///
+/// # Note
+/// - Handles command line parameter parsing
+/// - Configures project paths
+/// - Calculates MD5 hashes of Docker directories
+/// - Combines environment variables from different .env files
+/// - Executes requested operations (.env writing, version updates, Docker command execution)
+/// - Handles parameter validation and errors
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let versions_folder = "dev/docker_versions";
-
-    // Parsing dei parametri della linea di comando
-    let cli = Cli::parse();
-
-    // Verifica se sono stati impostati flag di azione
-    if !cli.write_env && !cli.update_versions && cli.args.is_empty() {
-        // Se nessun flag è impostato, mostra l'help e termina
-        display_help();
+  // Phase 1: Parse command line arguments and create execution plan
+  let execution_plan = match parse_arguments() {
+    Ok(plan) => plan,
+    Err(e) => {
+      // If the error is "No operations specified", it means help was shown
+      if e.to_string() == "No operations specified" {
         return Ok(());
+      }
+      return Err(e);
     }
+  };
 
-    println!("File .env selezionato: {}", cli.env);
-    if !cli.args.is_empty() {
-        println!("Argomenti aggiuntivi ricevuti: {:?}", cli.args);
-    }
+  // Phase 2: Execute all commands in the planned order using Command pattern
+  execution_plan.execute()?;
 
-    // Setup dei percorsi del progetto
-    let (host_project_path_str, docker_dev_path) = setup_project_paths()?;
-
-    // Creazione della mappa delle directory e calcolo degli MD5
-    let (dir_env_map, mut env_vars, md5_values) = create_dir_env_map_and_calculate_md5(&docker_dev_path, &host_project_path_str)?;
-
-    // Lettura del file .env e .env.local e aggiornamento delle variabili
-    let mut existing_env_vars = combine_env_files()?;
-    for (key, value) in &env_vars {
-        existing_env_vars.insert(key.clone(), value.clone());
-    }
-
-    // Esecuzione delle operazioni nell'ordine di dichiarazione dei flag
-
-    // 1. Scrittura delle variabili aggiornate nel file .env
-    if cli.write_env {
-        write_env_to_file(&cli.env, &existing_env_vars)?;
-    }
-
-    // 2. Aggiornamento delle versioni
-    if cli.update_versions {
-        update_versions(&md5_values, versions_folder)?;
-    }
-
-    //le variabili ambientali mancanti e presenti in .env vengono aggiunte
-    for (key, value) in existing_env_vars.clone() {
-        if !env_vars.contains_key(&key) {
-            env_vars.insert(key, value);
-        }
-    }
-
-    // 3. Esecuzione del comando Docker se ci sono argomenti
-    if !cli.args.is_empty() {
-        execute_docker_command(&env_vars, &existing_env_vars, &cli.args)?;
-    }
-
-    Ok(())
+  Ok(())
 }

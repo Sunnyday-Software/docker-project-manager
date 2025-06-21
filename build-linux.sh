@@ -47,7 +47,7 @@ fi
 mkdir -p build
 
 echo "=== Pulizia e aggiornamento del progetto ==="
-cargo clean
+#cargo clean
 cargo update
 
 # Compilazione per Linux
