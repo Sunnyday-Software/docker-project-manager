@@ -28,14 +28,13 @@ fi
 mkdir -p build
 
 echo "=== Pulizia e aggiornamento del progetto ==="
-cargo clean
+#cargo clean
 cargo update
 
 # Determina l'architettura del sistema
 ARCH=$(uname -m)
 
 # Compilazione per macOS (Intel)
-if [[ "$ARCH" == "x86_64" ]]; then
     echo "=== Compilazione per macOS (x86_64) ==="
     rustup target add x86_64-apple-darwin
     cargo build --release --target x86_64-apple-darwin
@@ -49,7 +48,7 @@ if [[ "$ARCH" == "x86_64" ]]; then
         echo "Errore: il binario macOS non è stato trovato in $MACOS_BINARY_PATH"
     fi
 # Compilazione per macOS (ARM)
-elif [[ "$ARCH" == "arm64" ]]; then
+
     echo "=== Compilazione per macOS (ARM64) ==="
     rustup target add aarch64-apple-darwin
     cargo build --release --target aarch64-apple-darwin
@@ -62,24 +61,7 @@ elif [[ "$ARCH" == "arm64" ]]; then
     else
         echo "Errore: il binario macOS ARM non è stato trovato in $MACOS_ARM_BINARY_PATH"
     fi
-fi
 
-# Compilazione standard per il sistema corrente
-echo "=== Compilazione standard per il sistema corrente ==="
-cargo build --release
-
-# Percorso del binario compilato per il sistema corrente
-BINARY_PATH="target/release/$PACKAGE_NAME"
-
-# Verifica se il binario esiste
-if [ ! -f "$BINARY_PATH" ]; then
-    echo "Errore: il binario compilato non è stato trovato in $BINARY_PATH"
-    exit 1
-fi
-
-# Copia il binario del sistema corrente nella directory build
-cp "$BINARY_PATH" "build/$PACKAGE_NAME"
-echo "Binario per il sistema corrente copiato in build/$PACKAGE_NAME"
 
 echo "=== Riepilogo dei binari compilati ==="
 ls -la build/
