@@ -412,6 +412,161 @@ impl Operation {
   }
 }
 
+/// Pipeline step types that can be executed in sequence
+#[derive(Debug, Clone)]
+pub enum Step {
+  /// Clean temporary files
+  Clean { force: bool },
+  /// Set configuration variable
+  Config { key: String, value: String },
+  /// Write environment file
+  WriteEnv { output: String },
+  /// Update component versions
+  UpdateVersions,
+  /// Execute Docker command
+  Run { args: Vec<String> },
+}
+
+impl Step {
+  /// Returns the name of the step for logging purposes
+  pub fn name(&self) -> &'static str {
+    match self {
+      Step::Clean { .. } => "clean",
+      Step::Config { .. } => "config",
+      Step::WriteEnv { .. } => "write-env",
+      Step::UpdateVersions => "update-versions",
+      Step::Run { .. } => "run",
+    }
+  }
+
+  /// Parses a command and its parameters from the argument iterator
+  /// Returns the parsed Step and the number of arguments consumed
+  pub fn parse_from_args(command: &str, args: &mut std::iter::Peekable<std::vec::IntoIter<String>>) -> Result<Step, String> {
+    match command {
+      "clean" => {
+        let mut force = false;
+        // Check if next argument is force
+        if let Some(next_arg) = args.peek() {
+          if next_arg == "force" {
+            force = true;
+            args.next(); // consume force
+          }
+        }
+        Ok(Step::Clean { force })
+      }
+      "config" => {
+        // Expect key=value format
+        if let Some(config_arg) = args.next() {
+          if let Some((key, value)) = config_arg.split_once('=') {
+            Ok(Step::Config {
+              key: key.to_string(),
+              value: value.to_string(),
+            })
+          } else {
+            Err(format!("Invalid config format: '{}'. Expected key=value", config_arg))
+          }
+        } else {
+          Err("Config step requires key=value argument".to_string())
+        }
+      }
+      "write-env" => {
+        // Expect output <file>
+        if let Some(next_arg) = args.next() {
+          if next_arg == "output" {
+            if let Some(output_file) = args.next() {
+              Ok(Step::WriteEnv { output: output_file })
+            } else {
+              Err("write-env output requires a filename".to_string())
+            }
+          } else {
+            Err("write-env step requires output <file>".to_string())
+          }
+        } else {
+          Err("write-env step requires output <file>".to_string())
+        }
+      }
+      "update-versions" => {
+        Ok(Step::UpdateVersions)
+      }
+      "run" => {
+        // Collect arguments until we find another known command
+        let mut run_args = Vec::new();
+        while let Some(next_arg) = args.peek() {
+          // Check if next argument is a known command
+          if matches!(next_arg.as_str(), "clean" | "config" | "write-env" | "update-versions" | "run") {
+            break;
+          }
+          run_args.push(args.next().unwrap());
+        }
+        Ok(Step::Run { args: run_args })
+      }
+      _ => {
+        Err(format!("Unknown command: '{}'", command))
+      }
+    }
+  }
+
+  /// Returns a display string for the step including parameters
+  pub fn display(&self) -> String {
+    match self {
+      Step::Clean { force } => {
+        if *force {
+          "clean --force".to_string()
+        } else {
+          "clean".to_string()
+        }
+      }
+      Step::Config { key, value } => format!("config {}={}", key, value),
+      Step::WriteEnv { output } => format!("write-env --output {}", output),
+      Step::UpdateVersions => "update-versions".to_string(),
+      Step::Run { args } => {
+        if args.is_empty() {
+          "run".to_string()
+        } else {
+          format!("run {}", args.join(" "))
+        }
+      }
+    }
+  }
+
+  /// Converts the step to a command object
+  pub fn to_command(&self) -> Box<dyn Command> {
+    match self {
+      Step::Clean { .. } => {
+        // For now, Clean step doesn't have a corresponding command
+        // We'll implement this as needed
+        Box::new(ConfigCommand::new("_clean".to_string(), "true".to_string()))
+      }
+      Step::Config { key, value } => Box::new(ConfigCommand::new(key.clone(), value.clone())),
+      Step::WriteEnv { .. } => Box::new(WriteEnvCommand),
+      Step::UpdateVersions => Box::new(UpdateVersionsCommand),
+      Step::Run { .. } => Box::new(RunCommand),
+    }
+  }
+}
+
+/// Parses a pipeline of arguments into a vector of steps
+/// Each argument can be a command or a command attribute
+/// The first element found is always a command
+/// When creating the pipeline, each command can have multiple attributes
+/// Parameters after the command are passed to the command itself which can consume or not consume some of the attributes
+pub fn parse_pipeline(args: Vec<String>) -> Result<Vec<Step>, String> {
+  let mut steps = Vec::new();
+  let mut iter = args.into_iter().peekable();
+
+  while let Some(command) = iter.next() {
+    // The first element (and any subsequent element that's not consumed by a previous command) is treated as a command
+    let step = Step::parse_from_args(&command, &mut iter)?;
+    steps.push(step);
+  }
+
+  if steps.is_empty() {
+    return Err("No valid steps found in pipeline".to_string());
+  }
+
+  Ok(steps)
+}
+
 /// Container for all parsed commands and execution context
 #[derive(Debug)]
 pub struct ExecutionPlan {

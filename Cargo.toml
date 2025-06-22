@@ -11,7 +11,6 @@ rust-version = "1.85.0"
 [dependencies]
 walkdir = "2.5.0"
 md-5 = "0.10.6"
-clap = { version = "4.5.40", features = ["derive"] }
 regex = "1.11.1"
 dirs = "6.0.0"
 
