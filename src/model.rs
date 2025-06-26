@@ -1,95 +1,7 @@
-// model.rs - Global constants and variables for Docker Project Manager
+// model.rs - Re-exports for backward compatibility
 
-/// Constants for file paths
-pub const DEFAULT_INPUT_ENV: &str = ".env.docker";
-pub const ENV_FILE: &str = ".env";
-pub const ENV_LOCAL_FILE: &str = ".env.local";
-
-/// Keys and default values for configurable variables
-pub const DOCKER_DEV_PATH_KEY: &str = "DOCKER_DEV_PATH";
-pub const DOCKER_DEV_PATH_DEFAULT_VALUE: &str = "./dev/docker";
-pub const VERSIONS_FOLDER_KEY: &str = "VERSIONS_FOLDER";
-pub const VERSIONS_FOLDER_DEFAULT_VALUE: &str = "dev/docker_versions";
-
-/// Structure for dynamic runtime configuration
-#[derive(Debug, Clone)]
-pub struct Config {
-  variables: std::collections::HashMap<String, String>,
-}
-
-impl Default for Config {
-  fn default() -> Self {
-    let mut variables = std::collections::HashMap::new();
-    variables.insert(
-      DOCKER_DEV_PATH_KEY.to_string(),
-      DOCKER_DEV_PATH_DEFAULT_VALUE.to_string(),
-    );
-    variables.insert(
-      VERSIONS_FOLDER_KEY.to_string(),
-      VERSIONS_FOLDER_DEFAULT_VALUE.to_string(),
-    );
-
-    Self { variables }
-  }
-}
-
-impl Config {
-  /// Creates a new configuration with default values
-  pub fn new() -> Self {
-    Self::default()
-  }
-
-  /// Updates the configuration with a key-value pair
-  pub fn set(&mut self, key: &str, value: &str) -> Result<(), String> {
-    if self.variables.contains_key(key) {
-      self.variables.insert(key.to_string(), value.to_string());
-      Ok(())
-    } else {
-      Err(format!("Unknown configuration variable: {}", key))
-    }
-  }
-
-  /// Gets the value of a configuration variable
-  pub fn get(&self, key: &str) -> Option<&String> {
-    self.variables.get(key)
-  }
-
-  /// Gets the path of the dev/docker directory
-  pub fn docker_dev_path(&self) -> &String {
-    self.variables.get(DOCKER_DEV_PATH_KEY).unwrap()
-  }
-
-  /// Gets the path of the directory for versioning files
-  pub fn versions_folder(&self) -> &String {
-    self.variables.get(VERSIONS_FOLDER_KEY).unwrap()
-  }
-
-  /// Gets all configured variables
-  pub fn get_all_variables(
-    &self,
-  ) -> &std::collections::HashMap<String, String> {
-    &self.variables
-  }
-
-  /// Adds a new configuration variable with its default value
-  pub fn add_variable(&mut self, key: &str, default_value: &str) {
-    if !self.variables.contains_key(key) {
-      self
-        .variables
-        .insert(key.to_string(), default_value.to_string());
-    }
-  }
-}
-
-/// Constants for Docker
-pub const DOCKER_SOCKET_PATH: &str = "/var/run/docker.sock";
-pub const DOCKER_DESKTOP_SOCKET_SUFFIX: &str = "/.docker/desktop/docker.sock";
-pub const DOCKER_SOCKET_SUFFIX: &str = "/docker.sock";
-
-/// Docker command arguments
-pub const DOCKER_COMPOSE_ARGS: &[&str] =
-  &["compose", "run", "--rm", "--no-deps"];
-pub const DOCKER_MAKE_ARGS: &[&str] = &["make", "make"];
+// Re-export everything from the new modular structure
+pub use crate::core::*;
 
 /// Environment variable names
 pub const ENV_DOCKER_HOST_MAP: &str = "DOCKER_HOST_MAP";
@@ -212,7 +124,10 @@ impl ExecutionContext {
 /// Command trait following the Command pattern
 pub trait Command: std::fmt::Debug {
   /// Executes the command with the given context
-  fn execute(&self, context: &mut ExecutionContext) -> Result<(), Box<dyn std::error::Error>>;
+  fn execute(
+    &self,
+    context: &mut ExecutionContext,
+  ) -> Result<(), Box<dyn std::error::Error>>;
 
   /// Returns the name of the command for logging purposes
   fn name(&self) -> &'static str;
@@ -240,7 +155,10 @@ impl ConfigCommand {
 }
 
 impl Command for ConfigCommand {
-  fn execute(&self, context: &mut ExecutionContext) -> Result<(), Box<dyn std::error::Error>> {
+  fn execute(
+    &self,
+    context: &mut ExecutionContext,
+  ) -> Result<(), Box<dyn std::error::Error>> {
     if context.verbose {
       println!("{}", MSG_EXECUTING_OPERATION.replace("{}", self.name()));
       println!("{}", MSG_CONFIG_PARSING);
@@ -276,17 +194,28 @@ impl Command for ConfigCommand {
 pub struct WriteEnvCommand;
 
 impl Command for WriteEnvCommand {
-  fn execute(&self, context: &mut ExecutionContext) -> Result<(), Box<dyn std::error::Error>> {
+  fn execute(
+    &self,
+    context: &mut ExecutionContext,
+  ) -> Result<(), Box<dyn std::error::Error>> {
     if context.verbose {
       println!("{}", MSG_EXECUTING_OPERATION.replace("{}", self.name()));
     }
 
-    let existing_env_vars = context.existing_env_vars.as_ref()
+    let existing_env_vars = context
+      .existing_env_vars
+      .as_ref()
       .ok_or("Environment variables not initialized")?;
-    let output_env = context.output_env.as_ref()
+    let output_env = context
+      .output_env
+      .as_ref()
       .ok_or("Output environment file not specified")?;
 
-    crate::file_ops::write_env_to_file(output_env, existing_env_vars, context.verbose)?;
+    crate::file_ops::write_env_to_file(
+      output_env,
+      existing_env_vars,
+      context.verbose,
+    )?;
     Ok(())
   }
 
@@ -304,15 +233,24 @@ impl Command for WriteEnvCommand {
 pub struct UpdateVersionsCommand;
 
 impl Command for UpdateVersionsCommand {
-  fn execute(&self, context: &mut ExecutionContext) -> Result<(), Box<dyn std::error::Error>> {
+  fn execute(
+    &self,
+    context: &mut ExecutionContext,
+  ) -> Result<(), Box<dyn std::error::Error>> {
     if context.verbose {
       println!("{}", MSG_EXECUTING_OPERATION.replace("{}", self.name()));
     }
 
-    let md5_values = context.md5_values.as_ref()
+    let md5_values = context
+      .md5_values
+      .as_ref()
       .ok_or("MD5 values not calculated")?;
 
-    crate::utils::update_versions(md5_values, context.config.versions_folder(), context.verbose)?;
+    crate::utils::update_versions(
+      md5_values,
+      context.config.versions_folder(),
+      context.verbose,
+    )?;
     Ok(())
   }
 
@@ -330,15 +268,22 @@ impl Command for UpdateVersionsCommand {
 pub struct RunCommand;
 
 impl Command for RunCommand {
-  fn execute(&self, context: &mut ExecutionContext) -> Result<(), Box<dyn std::error::Error>> {
+  fn execute(
+    &self,
+    context: &mut ExecutionContext,
+  ) -> Result<(), Box<dyn std::error::Error>> {
     if context.verbose {
       println!("{}", MSG_EXECUTING_OPERATION.replace("{}", self.name()));
     }
 
-    let mut env_vars = context.env_vars.as_ref()
+    let mut env_vars = context
+      .env_vars
+      .as_ref()
       .ok_or("Environment variables not initialized")?
       .clone();
-    let existing_env_vars = context.existing_env_vars.as_ref()
+    let existing_env_vars = context
+      .existing_env_vars
+      .as_ref()
       .ok_or("Existing environment variables not initialized")?;
 
     // Missing environment variables present in .env are added before each run
@@ -354,7 +299,12 @@ impl Command for RunCommand {
       }
     }
 
-    crate::docker::execute_docker_command(&env_vars, existing_env_vars, &context.args, context.verbose)?;
+    crate::docker::execute_docker_command(
+      &env_vars,
+      existing_env_vars,
+      &context.args,
+      context.verbose,
+    )?;
     Ok(())
   }
 
@@ -364,6 +314,45 @@ impl Command for RunCommand {
 
   fn display(&self) -> String {
     "run".to_string()
+  }
+}
+
+/// Clean command implementation
+#[derive(Debug, Clone)]
+pub struct CleanCommand {
+  pub force: bool,
+}
+
+impl CleanCommand {
+  pub fn new(force: bool) -> Self {
+    Self { force }
+  }
+}
+
+impl Command for CleanCommand {
+  fn execute(
+    &self,
+    context: &mut ExecutionContext,
+  ) -> Result<(), Box<dyn std::error::Error>> {
+    if context.verbose {
+      println!("{}", MSG_EXECUTING_OPERATION.replace("{}", self.name()));
+    }
+
+    // TODO: Implement clean functionality
+    println!("Clean command executed with force: {}", self.force);
+    Ok(())
+  }
+
+  fn name(&self) -> &'static str {
+    "clean"
+  }
+
+  fn display(&self) -> String {
+    if self.force {
+      "clean --force".to_string()
+    } else {
+      "clean".to_string()
+    }
   }
 }
 
@@ -404,11 +393,224 @@ impl Operation {
   /// Converts the operation to a command object
   pub fn to_command(&self) -> Box<dyn Command> {
     match self {
-      Operation::Config { key, value } => Box::new(ConfigCommand::new(key.clone(), value.clone())),
+      Operation::Config { key, value } => {
+        Box::new(ConfigCommand::new(key.clone(), value.clone()))
+      }
       Operation::WriteEnv => Box::new(WriteEnvCommand),
       Operation::UpdateVersions => Box::new(UpdateVersionsCommand),
       Operation::Run => Box::new(RunCommand),
     }
+  }
+}
+
+/// Trait for parsing steps from command line arguments
+pub trait StepParser: std::fmt::Debug {
+  /// Returns the command name this parser handles
+  fn command_name(&self) -> &'static str;
+
+  /// Attempts to parse a step from the given command and arguments
+  /// Returns Some(Result) if this parser can handle the command, None otherwise
+  fn try_parse(
+    &self,
+    command: &str,
+    args: &mut std::iter::Peekable<std::vec::IntoIter<String>>,
+  ) -> Option<Result<Step, String>>;
+}
+
+/// Registry for step parsers
+pub struct StepRegistry {
+  parsers: Vec<Box<dyn StepParser>>,
+}
+
+impl StepRegistry {
+  /// Creates a new step registry with default parsers
+  pub fn new() -> Self {
+    let mut registry = Self {
+      parsers: Vec::new(),
+    };
+
+    // Register default step parsers
+    registry.register(Box::new(CleanStepParser));
+    registry.register(Box::new(ConfigStepParser));
+    registry.register(Box::new(WriteEnvStepParser));
+    registry.register(Box::new(UpdateVersionsStepParser));
+    registry.register(Box::new(RunStepParser));
+
+    registry
+  }
+
+  /// Registers a new step parser
+  pub fn register(&mut self, parser: Box<dyn StepParser>) {
+    self.parsers.push(parser);
+  }
+
+  /// Attempts to parse a step using registered parsers
+  pub fn parse_step(
+    &self,
+    command: &str,
+    args: &mut std::iter::Peekable<std::vec::IntoIter<String>>,
+  ) -> Result<Step, String> {
+    for parser in &self.parsers {
+      if let Some(result) = parser.try_parse(command, args) {
+        return result;
+      }
+    }
+    Err(format!("Unknown command: '{}'", command))
+  }
+}
+
+/// Individual step parsers
+#[derive(Debug)]
+pub struct CleanStepParser;
+
+impl StepParser for CleanStepParser {
+  fn command_name(&self) -> &'static str {
+    "clean"
+  }
+
+  fn try_parse(
+    &self,
+    command: &str,
+    args: &mut std::iter::Peekable<std::vec::IntoIter<String>>,
+  ) -> Option<Result<Step, String>> {
+    if command != "clean" {
+      return None;
+    }
+
+    let mut force = false;
+    // Check if next argument is force
+    if let Some(next_arg) = args.peek() {
+      if next_arg == "force" {
+        force = true;
+        args.next(); // consume force
+      }
+    }
+    Some(Ok(Step::Clean { force }))
+  }
+}
+
+#[derive(Debug)]
+pub struct ConfigStepParser;
+
+impl StepParser for ConfigStepParser {
+  fn command_name(&self) -> &'static str {
+    "config"
+  }
+
+  fn try_parse(
+    &self,
+    command: &str,
+    args: &mut std::iter::Peekable<std::vec::IntoIter<String>>,
+  ) -> Option<Result<Step, String>> {
+    if command != "config" {
+      return None;
+    }
+
+    // Expect key=value format
+    if let Some(config_arg) = args.next() {
+      if let Some((key, value)) = config_arg.split_once('=') {
+        Some(Ok(Step::Config {
+          key: key.to_string(),
+          value: value.to_string(),
+        }))
+      } else {
+        Some(Err(format!(
+          "Invalid config format: '{}'. Expected key=value",
+          config_arg
+        )))
+      }
+    } else {
+      Some(Err("Config step requires key=value argument".to_string()))
+    }
+  }
+}
+
+#[derive(Debug)]
+pub struct WriteEnvStepParser;
+
+impl StepParser for WriteEnvStepParser {
+  fn command_name(&self) -> &'static str {
+    "write-env"
+  }
+
+  fn try_parse(
+    &self,
+    command: &str,
+    args: &mut std::iter::Peekable<std::vec::IntoIter<String>>,
+  ) -> Option<Result<Step, String>> {
+    if command != "write-env" {
+      return None;
+    }
+
+    // Expect output <file>
+    if let Some(next_arg) = args.next() {
+      if next_arg == "output" {
+        if let Some(output_file) = args.next() {
+          Some(Ok(Step::WriteEnv {
+            output: output_file,
+          }))
+        } else {
+          Some(Err("write-env output requires a filename".to_string()))
+        }
+      } else {
+        Some(Err("write-env step requires output <file>".to_string()))
+      }
+    } else {
+      Some(Err("write-env step requires output <file>".to_string()))
+    }
+  }
+}
+
+#[derive(Debug)]
+pub struct UpdateVersionsStepParser;
+
+impl StepParser for UpdateVersionsStepParser {
+  fn command_name(&self) -> &'static str {
+    "update-versions"
+  }
+
+  fn try_parse(
+    &self,
+    command: &str,
+    _args: &mut std::iter::Peekable<std::vec::IntoIter<String>>,
+  ) -> Option<Result<Step, String>> {
+    if command != "update-versions" {
+      return None;
+    }
+    Some(Ok(Step::UpdateVersions))
+  }
+}
+
+#[derive(Debug)]
+pub struct RunStepParser;
+
+impl StepParser for RunStepParser {
+  fn command_name(&self) -> &'static str {
+    "run"
+  }
+
+  fn try_parse(
+    &self,
+    command: &str,
+    args: &mut std::iter::Peekable<std::vec::IntoIter<String>>,
+  ) -> Option<Result<Step, String>> {
+    if command != "run" {
+      return None;
+    }
+
+    // Collect arguments until we find another known command
+    let mut run_args = Vec::new();
+    while let Some(next_arg) = args.peek() {
+      // Check if next argument is a known command
+      if matches!(
+        next_arg.as_str(),
+        "clean" | "config" | "write-env" | "update-versions" | "run"
+      ) {
+        break;
+      }
+      run_args.push(args.next().unwrap());
+    }
+    Some(Ok(Step::Run { args: run_args }))
   }
 }
 
@@ -440,70 +642,13 @@ impl Step {
   }
 
   /// Parses a command and its parameters from the argument iterator
-  /// Returns the parsed Step and the number of arguments consumed
-  pub fn parse_from_args(command: &str, args: &mut std::iter::Peekable<std::vec::IntoIter<String>>) -> Result<Step, String> {
-    match command {
-      "clean" => {
-        let mut force = false;
-        // Check if next argument is force
-        if let Some(next_arg) = args.peek() {
-          if next_arg == "force" {
-            force = true;
-            args.next(); // consume force
-          }
-        }
-        Ok(Step::Clean { force })
-      }
-      "config" => {
-        // Expect key=value format
-        if let Some(config_arg) = args.next() {
-          if let Some((key, value)) = config_arg.split_once('=') {
-            Ok(Step::Config {
-              key: key.to_string(),
-              value: value.to_string(),
-            })
-          } else {
-            Err(format!("Invalid config format: '{}'. Expected key=value", config_arg))
-          }
-        } else {
-          Err("Config step requires key=value argument".to_string())
-        }
-      }
-      "write-env" => {
-        // Expect output <file>
-        if let Some(next_arg) = args.next() {
-          if next_arg == "output" {
-            if let Some(output_file) = args.next() {
-              Ok(Step::WriteEnv { output: output_file })
-            } else {
-              Err("write-env output requires a filename".to_string())
-            }
-          } else {
-            Err("write-env step requires output <file>".to_string())
-          }
-        } else {
-          Err("write-env step requires output <file>".to_string())
-        }
-      }
-      "update-versions" => {
-        Ok(Step::UpdateVersions)
-      }
-      "run" => {
-        // Collect arguments until we find another known command
-        let mut run_args = Vec::new();
-        while let Some(next_arg) = args.peek() {
-          // Check if next argument is a known command
-          if matches!(next_arg.as_str(), "clean" | "config" | "write-env" | "update-versions" | "run") {
-            break;
-          }
-          run_args.push(args.next().unwrap());
-        }
-        Ok(Step::Run { args: run_args })
-      }
-      _ => {
-        Err(format!("Unknown command: '{}'", command))
-      }
-    }
+  /// Returns the parsed Step using individual step parsers
+  pub fn parse_from_args(
+    command: &str,
+    args: &mut std::iter::Peekable<std::vec::IntoIter<String>>,
+  ) -> Result<Step, String> {
+    let registry = StepRegistry::new();
+    registry.parse_step(command, args)
   }
 
   /// Returns a display string for the step including parameters
@@ -537,7 +682,9 @@ impl Step {
         // We'll implement this as needed
         Box::new(ConfigCommand::new("_clean".to_string(), "true".to_string()))
       }
-      Step::Config { key, value } => Box::new(ConfigCommand::new(key.clone(), value.clone())),
+      Step::Config { key, value } => {
+        Box::new(ConfigCommand::new(key.clone(), value.clone()))
+      }
       Step::WriteEnv { .. } => Box::new(WriteEnvCommand),
       Step::UpdateVersions => Box::new(UpdateVersionsCommand),
       Step::Run { .. } => Box::new(RunCommand),
@@ -545,145 +692,27 @@ impl Step {
   }
 }
 
-/// Parses a pipeline of arguments into a vector of steps
+/// Parses a pipeline of arguments into a vector of commands using the command registry
 /// Each argument can be a command or a command attribute
 /// The first element found is always a command
 /// When creating the pipeline, each command can have multiple attributes
 /// Parameters after the command are passed to the command itself which can consume or not consume some of the attributes
-pub fn parse_pipeline(args: Vec<String>) -> Result<Vec<Step>, String> {
-  let mut steps = Vec::new();
+pub fn parse_pipeline_with_registry(
+  args: Vec<String>,
+) -> Result<Vec<Box<dyn crate::core::Command>>, String> {
+  let registry = CommandRegistry::new();
+  let mut commands = Vec::new();
   let mut iter = args.into_iter().peekable();
 
   while let Some(command) = iter.next() {
     // The first element (and any subsequent element that's not consumed by a previous command) is treated as a command
-    let step = Step::parse_from_args(&command, &mut iter)?;
-    steps.push(step);
+    let parsed_command = registry.parse_command(&command, &mut iter)?;
+    commands.push(parsed_command);
   }
 
-  if steps.is_empty() {
-    return Err("No valid steps found in pipeline".to_string());
+  if commands.is_empty() {
+    return Err("No valid commands found in pipeline".to_string());
   }
 
-  Ok(steps)
+  Ok(commands)
 }
-
-/// Container for all parsed commands and execution context
-#[derive(Debug)]
-pub struct ExecutionPlan {
-  /// List of commands to execute in order
-  pub commands: Vec<Box<dyn Command>>,
-  /// Input environment file path
-  pub input_env: String,
-  /// Output environment file path (optional)
-  pub output_env: Option<String>,
-  /// Additional arguments for Docker commands
-  pub args: Vec<String>,
-  /// Verbose output flag
-  pub verbose: bool,
-  /// Runtime configuration
-  pub config: Config,
-}
-
-impl ExecutionPlan {
-  /// Creates a new execution plan
-  pub fn new(
-    input_env: String,
-    output_env: Option<String>,
-    args: Vec<String>,
-    verbose: bool,
-  ) -> Self {
-    Self {
-      commands: Vec::new(),
-      input_env,
-      output_env,
-      args,
-      verbose,
-      config: Config::new(),
-    }
-  }
-
-  /// Adds a command to the execution plan
-  pub fn add_command(&mut self, command: Box<dyn Command>) {
-    self.commands.push(command);
-  }
-
-  /// Adds an operation to the execution plan (converts to command)
-  pub fn add_operation(&mut self, operation: Operation) {
-    self.commands.push(operation.to_command());
-  }
-
-  /// Returns true if the plan contains any commands
-  pub fn has_operations(&self) -> bool {
-    !self.commands.is_empty()
-  }
-
-  /// Returns a list of command names for display
-  pub fn operation_names(&self) -> Vec<String> {
-    self.commands.iter().map(|cmd| cmd.display()).collect()
-  }
-
-  /// Creates an execution context from the plan
-  pub fn create_execution_context(&self) -> ExecutionContext {
-    ExecutionContext::new(
-      self.config.clone(),
-      self.input_env.clone(),
-      self.output_env.clone(),
-      self.args.clone(),
-      self.verbose,
-    )
-  }
-
-  /// Executes all commands in the plan
-  pub fn execute(&self) -> Result<(), Box<dyn std::error::Error>> {
-    let mut context = self.create_execution_context();
-
-    // First pass: Execute all configuration commands
-    for command in &self.commands {
-      if command.is_config_command() {
-        command.execute(&mut context)?;
-      }
-    }
-
-    // Setup project paths (now uses updated configuration)
-    let (host_project_path_str, docker_dev_path) =
-      crate::utils::setup_project_paths(context.config.docker_dev_path(), context.verbose)?;
-
-    // Store paths in context
-    context.host_project_path = Some(host_project_path_str.clone());
-    context.docker_dev_path = Some(docker_dev_path.to_string_lossy().to_string());
-
-    // Creation of directory map and MD5 calculation
-    let (dir_env_map, mut env_vars, md5_values) =
-      crate::env_ops::create_dir_env_map_and_calculate_md5(
-        &docker_dev_path,
-        &host_project_path_str,
-        context.verbose,
-      )?;
-
-    // Reading .env, .env.local and specified input file, and updating variables
-    let mut existing_env_vars = crate::env_ops::combine_env_files(&context.input_env, context.verbose)?;
-    for (key, value) in &env_vars {
-      existing_env_vars.insert(key.clone(), value.clone());
-    }
-
-    // Store environment variables and MD5 values in context
-    context.env_vars = Some(env_vars);
-    context.existing_env_vars = Some(existing_env_vars);
-    context.md5_values = Some(md5_values);
-
-    // Second pass: Execute non-configuration commands in the order they were specified
-    for command in &self.commands {
-      if !command.is_config_command() {
-        command.execute(&mut context)?;
-      }
-    }
-
-    Ok(())
-  }
-}
-
-/// Formats
-pub const FORMAT_HEX: &str = "{:x}";
-pub const FORMAT_VERSION: &str = "{}.{}.{}";
-pub const FORMAT_ENV_VAR: &str = "{}={}";
-pub const FORMAT_TXT_EXTENSION: &str = "{}.txt";

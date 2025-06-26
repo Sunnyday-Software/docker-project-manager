@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::{env, fs};
+use std::env;
 
 #[cfg(windows)]
 use dirs::home_dir;
