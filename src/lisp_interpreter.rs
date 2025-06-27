@@ -151,7 +151,7 @@ impl Tag {
 pub mod tags {
   use super::Tag;
 
-  pub const CORE: Tag = Tag { name: "core", order: 1, text: "Core Commands" };
+  pub const CORE: Tag = Tag { name: "core", order: 1000, text: "Core Commands" };
   pub const COMMANDS: Tag = Tag { name: "commands", order: 2, text: "Command Management" };
 }
 
