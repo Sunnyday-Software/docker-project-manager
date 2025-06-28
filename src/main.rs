@@ -22,7 +22,7 @@ mod version_commands;
 use commands::{
   ConcatCommand, DebugCommand, MultiplyCommand, PipeCommand, PrintCommand,
   SumCommand, register_basedir_commands, register_help_commands,
-  register_list_commands, register_all_rust_commands,
+  register_list_commands, register_all_rust_commands, register_app_commands,
 };
 use context::Context;
 use lisp_interpreter::*;
@@ -48,6 +48,9 @@ fn register_builtin_commands(registry: &mut CommandRegistry) {
 
   // Register basedir commands
   register_basedir_commands(registry);
+
+  // Register app commands
+  register_app_commands(registry);
 
   // Register Rust standard library commands
   register_all_rust_commands(registry);

@@ -1,5 +1,5 @@
-use crate::{CommandRegistry, Context, Value, tags};
 use crate::utils::debug_log;
+use crate::{CommandRegistry, Context, Value, tags};
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -61,12 +61,39 @@ pub fn register_basedir_commands(registry: &mut CommandRegistry) {
 
       debug_log(ctx, "basedir", "path exists, setting as base directory");
       // Store the base directory in the context
-      ctx.set_variable("basedir".to_string(), Value::Str(base_path.clone()));
+      ctx.set_basedir(PathBuf::from(&base_path));
 
       let result_msg = format!("Base directory set to: {}", base_path);
       debug_log(ctx, "basedir", "base directory successfully set");
 
       Ok(Value::Str(result_msg))
+    },
+  );
+
+  // Register the get-basedir command
+  registry.register_closure_with_help_and_tag(
+    "get-basedir",
+    "Get the current base directory from the context",
+    "(get-basedir)",
+    "  (get-basedir)                 ; Get the current base directory path",
+    &tags::COMMANDS,
+    |args, ctx| {
+      debug_log(ctx, "get-basedir", "executing get-basedir command");
+
+      if !args.is_empty() {
+        return Err("get-basedir expects no arguments".to_string());
+      }
+
+      let basedir = ctx.get_basedir();
+      let basedir_str = basedir.to_string_lossy().to_string();
+
+      debug_log(
+        ctx,
+        "get-basedir",
+        &format!("returning basedir: {}", basedir_str),
+      );
+
+      Ok(Value::Str(basedir_str))
     },
   );
 
@@ -89,7 +116,7 @@ pub fn register_basedir_commands(registry: &mut CommandRegistry) {
           Value::Str(s) => {
             debug_log(ctx, "basedir", &format!("using specified target: {}", s));
             s.clone()
-          },
+          }
           _ => return Err("basedir-root target must be a string".to_string()),
         }
       } else {
@@ -101,7 +128,7 @@ pub fn register_basedir_commands(registry: &mut CommandRegistry) {
         Ok(dir) => {
           debug_log(ctx, "basedir", &format!("starting search from: {}", dir.display()));
           dir
-        },
+        }
         Err(e) => return Err(format!("Failed to get current directory: {}", e)),
       };
 
@@ -116,8 +143,8 @@ pub fn register_basedir_commands(registry: &mut CommandRegistry) {
           ctx.set_basedir(current_dir.clone());
 
           let result_msg = format!(
-            "Found '{}' at: {}\nBase directory set to: {}", 
-            target, 
+            "Found '{}' at: {}\nBase directory set to: {}",
+            target,
             target_path.display(),
             current_dir.display()
           );
@@ -131,11 +158,11 @@ pub fn register_basedir_commands(registry: &mut CommandRegistry) {
           Some(parent) => {
             current_dir = parent.to_path_buf();
             debug_log(ctx, "basedir", &format!("moving up to parent directory: {}", current_dir.display()));
-          },
+          }
           None => {
             debug_log(ctx, "basedir", "reached filesystem root, target not found");
             return Err(format!(
-              "Target '{}' not found in any parent directory from current working directory", 
+              "Target '{}' not found in any parent directory from current working directory",
               target
             ));
           }

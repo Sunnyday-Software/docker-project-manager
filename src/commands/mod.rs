@@ -8,6 +8,7 @@ pub mod concat;
 pub mod basedir;
 pub mod debug;
 pub mod rust;
+pub mod app;
 
 pub use print::PrintCommand;
 pub use sum::SumCommand;
@@ -19,3 +20,4 @@ pub use concat::ConcatCommand;
 pub use basedir::register_basedir_commands;
 pub use debug::DebugCommand;
 pub use rust::register_all_rust_commands;
+pub use app::register_app_commands;
