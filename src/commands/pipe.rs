@@ -1,4 +1,5 @@
-use crate::{Command, Value, Context, evaluate};
+use crate::{Command, Value, evaluate};
+use crate::context::Context;
 
 /// Pipe command - executes a pipeline of commands
 pub struct PipeCommand;

@@ -28,9 +28,10 @@ use std::fmt;
 use std::sync::{Arc, Mutex};
 
 use crate::commands::{
-  PipeCommand, PrintCommand, SumCommand, register_help_commands,
+  DebugCommand, PipeCommand, PrintCommand, SumCommand, register_help_commands,
   register_list_commands,
 };
+use crate::context::Context;
 
 /// Universal value type for the Lisp interpreter
 /// Represents all possible values that can be passed between commands
@@ -40,6 +41,8 @@ pub enum Value {
   Int(i64),
   /// String value
   Str(String),
+  /// Boolean value
+  Bool(bool),
   /// List of values
   List(Vec<Value>),
   /// Nil/null value
@@ -51,7 +54,7 @@ impl Value {
   pub fn from_lexpr(lexpr_value: &lexpr::Value) -> Result<Value, String> {
     match lexpr_value {
       lexpr::Value::Nil => Ok(Value::Nil),
-      lexpr::Value::Bool(b) => Ok(Value::Int(if *b { 1 } else { 0 })),
+      lexpr::Value::Bool(b) => Ok(Value::Bool(*b)),
       lexpr::Value::Number(n) => {
         if let Some(i) = n.as_i64() {
           Ok(Value::Int(i))
@@ -93,6 +96,7 @@ impl Value {
       Value::Nil => lexpr::Value::Nil,
       Value::Int(i) => lexpr::Value::Number((*i).into()),
       Value::Str(s) => lexpr::Value::String(s.clone().into()),
+      Value::Bool(b) => lexpr::Value::Bool(*b),
       Value::List(list) => {
         let mut result = lexpr::Value::Nil;
         for item in list.iter().rev() {
@@ -108,6 +112,7 @@ impl Value {
     match self {
       Value::Nil => false,
       Value::Int(0) => false,
+      Value::Bool(b) => *b,
       _ => true,
     }
   }
@@ -118,6 +123,13 @@ impl Value {
       Value::Nil => "nil".to_string(),
       Value::Int(i) => i.to_string(),
       Value::Str(s) => s.clone(),
+      Value::Bool(b) => {
+        if *b {
+          "true".to_string()
+        } else {
+          "false".to_string()
+        }
+      }
       Value::List(list) => {
         let items: Vec<String> = list.iter().map(|v| v.to_string()).collect();
         format!("({})", items.join(" "))
@@ -151,8 +163,21 @@ impl Tag {
 pub mod tags {
   use super::Tag;
 
-  pub const CORE: Tag = Tag { name: "core", order: 1000, text: "Core Commands" };
-  pub const COMMANDS: Tag = Tag { name: "commands", order: 2, text: "Command Management" };
+  pub const CORE: Tag = Tag {
+    name: "core",
+    order: 1000,
+    text: "Core Commands",
+  };
+  pub const COMMANDS: Tag = Tag {
+    name: "commands",
+    order: 2,
+    text: "Command Management",
+  };
+  pub const RUST: Tag = Tag {
+    name: "rust",
+    order: 9999,
+    text: "Rust Standard Library",
+  };
 }
 
 /// Command trait for implementing executable commands
@@ -323,7 +348,14 @@ impl CommandRegistry {
       + Sync
       + 'static,
   {
-    self.register_closure_with_help_and_tag(name, description, syntax, examples, &tags::CORE, func);
+    self.register_closure_with_help_and_tag(
+      name,
+      description,
+      syntax,
+      examples,
+      &tags::CORE,
+      func,
+    );
   }
 
   /// Register a command using a closure with help information and a specific tag
@@ -447,17 +479,25 @@ impl CommandRegistry {
   }
 
   /// Get commands grouped by tags with descriptions
-  pub fn get_commands_grouped_by_tags(&self) -> Vec<(Tag, Vec<(String, String)>)> {
+  pub fn get_commands_grouped_by_tags(
+    &self,
+  ) -> Vec<(Tag, Vec<(String, String)>)> {
     let commands = self.commands.lock().unwrap();
-    let mut tag_groups: HashMap<String, (Tag, Vec<(String, String)>)> = HashMap::new();
+    let mut tag_groups: HashMap<String, (Tag, Vec<(String, String)>)> =
+      HashMap::new();
 
     for (name, command) in commands.iter() {
       let tag = command.tag().clone();
-      let entry = tag_groups.entry(tag.name.to_string()).or_insert((tag, Vec::new()));
-      entry.1.push((name.clone(), command.description().to_string()));
+      let entry = tag_groups
+        .entry(tag.name.to_string())
+        .or_insert((tag, Vec::new()));
+      entry
+        .1
+        .push((name.clone(), command.description().to_string()));
     }
 
-    let mut result: Vec<(Tag, Vec<(String, String)>)> = tag_groups.into_values().collect();
+    let mut result: Vec<(Tag, Vec<(String, String)>)> =
+      tag_groups.into_values().collect();
 
     // Sort by tag order
     result.sort_by(|a, b| a.0.order.cmp(&b.0.order));
@@ -471,13 +511,20 @@ impl CommandRegistry {
   }
 
   /// Get commands grouped by tags with full help information
-  pub fn get_commands_grouped_by_tags_with_help(&self) -> Vec<(Tag, Vec<(String, String, String, String)>)> {
+  pub fn get_commands_grouped_by_tags_with_help(
+    &self,
+  ) -> Vec<(Tag, Vec<(String, String, String, String)>)> {
     let commands = self.commands.lock().unwrap();
-    let mut tag_groups: HashMap<String, (Tag, Vec<(String, String, String, String)>)> = HashMap::new();
+    let mut tag_groups: HashMap<
+      String,
+      (Tag, Vec<(String, String, String, String)>),
+    > = HashMap::new();
 
     for (name, command) in commands.iter() {
       let tag = command.tag().clone();
-      let entry = tag_groups.entry(tag.name.to_string()).or_insert((tag, Vec::new()));
+      let entry = tag_groups
+        .entry(tag.name.to_string())
+        .or_insert((tag, Vec::new()));
       entry.1.push((
         name.clone(),
         command.description().to_string(),
@@ -486,7 +533,8 @@ impl CommandRegistry {
       ));
     }
 
-    let mut result: Vec<(Tag, Vec<(String, String, String, String)>)> = tag_groups.into_values().collect();
+    let mut result: Vec<(Tag, Vec<(String, String, String, String)>)> =
+      tag_groups.into_values().collect();
 
     // Sort by tag order
     result.sort_by(|a, b| a.0.order.cmp(&b.0.order));
@@ -497,35 +545,6 @@ impl CommandRegistry {
     }
 
     result
-  }
-}
-
-/// Execution context for commands
-/// Contains the command registry and any shared state
-pub struct Context {
-  /// Command registry for looking up commands
-  pub registry: CommandRegistry,
-  /// Variables storage for the session
-  pub variables: HashMap<String, Value>,
-}
-
-impl Context {
-  /// Create a new context with the given registry
-  pub fn new(registry: CommandRegistry) -> Self {
-    Self {
-      registry,
-      variables: HashMap::new(),
-    }
-  }
-
-  /// Set a variable in the context
-  pub fn set_variable(&mut self, name: String, value: Value) {
-    self.variables.insert(name, value);
-  }
-
-  /// Get a variable from the context
-  pub fn get_variable(&self, name: &str) -> Option<&Value> {
-    self.variables.get(name)
   }
 }
 
@@ -670,6 +689,11 @@ pub fn ints_to_values(ints: Vec<i64>) -> Vec<Value> {
   ints.into_iter().map(|i| Value::Int(i)).collect()
 }
 
+/// Utility function to convert a vector of booleans to Values
+pub fn bools_to_values(bools: Vec<bool>) -> Vec<Value> {
+  bools.into_iter().map(|b| Value::Bool(b)).collect()
+}
+
 /// Helper function to extract integer from Value
 pub fn value_to_int(value: &Value) -> Result<i64, String> {
   match value {
@@ -694,6 +718,14 @@ pub fn value_to_list(value: &Value) -> Result<Vec<Value>, String> {
   }
 }
 
+/// Helper function to extract boolean from Value
+pub fn value_to_bool(value: &Value) -> Result<bool, String> {
+  match value {
+    Value::Bool(b) => Ok(*b),
+    _ => Err(format!("Expected boolean, got: {}", value)),
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -704,6 +736,7 @@ mod tests {
     registry.register(PrintCommand);
     registry.register(SumCommand);
     registry.register(PipeCommand);
+    registry.register(DebugCommand);
 
     // Register list utility commands
     register_list_commands(registry);
@@ -718,6 +751,17 @@ mod tests {
     let lexpr_val = int_val.to_lexpr();
     let back_val = Value::from_lexpr(&lexpr_val).unwrap();
     assert_eq!(int_val, back_val);
+
+    // Test boolean conversions
+    let bool_true = Value::Bool(true);
+    let lexpr_true = bool_true.to_lexpr();
+    let back_true = Value::from_lexpr(&lexpr_true).unwrap();
+    assert_eq!(bool_true, back_true);
+
+    let bool_false = Value::Bool(false);
+    let lexpr_false = bool_false.to_lexpr();
+    let back_false = Value::from_lexpr(&lexpr_false).unwrap();
+    assert_eq!(bool_false, back_false);
   }
 
   #[test]
@@ -731,6 +775,30 @@ mod tests {
   }
 
   #[test]
+  fn test_boolean_functionality() {
+    // Test boolean utility functions
+    let bool_values = bools_to_values(vec![true, false, true]);
+    assert_eq!(bool_values.len(), 3);
+    assert_eq!(bool_values[0], Value::Bool(true));
+    assert_eq!(bool_values[1], Value::Bool(false));
+    assert_eq!(bool_values[2], Value::Bool(true));
+
+    // Test value_to_bool function
+    let true_val = Value::Bool(true);
+    let false_val = Value::Bool(false);
+    assert_eq!(value_to_bool(&true_val).unwrap(), true);
+    assert_eq!(value_to_bool(&false_val).unwrap(), false);
+
+    // Test is_truthy with boolean values
+    assert_eq!(true_val.is_truthy(), true);
+    assert_eq!(false_val.is_truthy(), false);
+
+    // Test to_string with boolean values
+    assert_eq!(true_val.to_string(), "true");
+    assert_eq!(false_val.to_string(), "false");
+  }
+
+  #[test]
   fn test_print_command() {
     let mut registry = CommandRegistry::new();
     register_test_commands(&mut registry);
@@ -739,5 +807,55 @@ mod tests {
     let result =
       evaluate_string("(print \"Hello\" \"World\")", &mut ctx).unwrap();
     assert_eq!(result, Value::Str("Hello World".to_string()));
+  }
+
+  #[test]
+  fn test_debug_command() {
+    let mut registry = CommandRegistry::new();
+    register_test_commands(&mut registry);
+    let mut ctx = Context::new(registry);
+
+    // Test debug command with "true" parameter
+    let result = evaluate_string("(debug \"true\")", &mut ctx).unwrap();
+    assert_eq!(result, Value::Str("Debug printing enabled".to_string()));
+
+    // Verify debugPrint is set to true
+    assert_eq!(ctx.get_debug_print(), true);
+
+    // Test debug command with "false" parameter
+    let result = evaluate_string("(debug \"false\")", &mut ctx).unwrap();
+    assert_eq!(result, Value::Str("Debug printing disabled".to_string()));
+
+    // Verify debugPrint is set to false
+    assert_eq!(ctx.get_debug_print(), false);
+
+    // Test debug command with case insensitive "TRUE"
+    let result = evaluate_string("(debug \"TRUE\")", &mut ctx).unwrap();
+    assert_eq!(result, Value::Str("Debug printing enabled".to_string()));
+
+    // Test debug command with case insensitive "False"
+    let result = evaluate_string("(debug \"False\")", &mut ctx).unwrap();
+    assert_eq!(result, Value::Str("Debug printing disabled".to_string()));
+
+    // Test debug command with no parameters (original behavior)
+    // Set a test variable first
+    ctx.set_variable("testVar".to_string(), Value::Int(42));
+    let result = evaluate_string("(debug)", &mut ctx).unwrap();
+    // The result should contain debug information as a string
+    assert!(result.to_string().contains("testVar = 42"));
+    assert!(result.to_string().contains("debugPrint = false"));
+
+    // Test error cases
+    let error_result = evaluate_string("(debug \"invalid\")", &mut ctx);
+    assert!(error_result.is_err());
+    assert!(
+      error_result
+        .unwrap_err()
+        .contains("must be 'true' or 'false'")
+    );
+
+    let error_result = evaluate_string("(debug \"true\" \"extra\")", &mut ctx);
+    assert!(error_result.is_err());
+    assert!(error_result.unwrap_err().contains("exactly one argument"));
   }
 }

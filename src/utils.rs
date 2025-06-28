@@ -13,6 +13,7 @@ use uzers::{get_current_gid, get_current_uid, get_user_by_uid};
 
 use crate::docker::process_docker_version;
 use crate::model::*;
+use crate::context::Context;
 
 #[cfg(unix)]
 /// Ottiene l'ID utente, l'ID gruppo e il nome utente corrente sui sistemi Unix.
@@ -152,4 +153,19 @@ pub fn update_versions(
     process_docker_version(dir_path, md5_value, versions_folder, verbose)?;
   }
   Ok(())
+}
+
+/// Prints a debug message if debug_print is enabled in the context.
+///
+/// # Arguments
+/// * `ctx` - The execution context containing the debug_print flag
+/// * `module_name` - The name of the module/command issuing the debug message
+/// * `description` - Description of what is being done
+///
+/// # Format
+/// The debug message is printed in the format: "module-name: description"
+pub fn debug_log(ctx: &Context, module_name: &str, description: &str) {
+  if ctx.get_debug_print() {
+    println!("{}: {}", module_name, description);
+  }
 }

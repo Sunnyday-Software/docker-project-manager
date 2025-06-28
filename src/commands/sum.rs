@@ -1,4 +1,5 @@
-use crate::{Command, Value, Context};
+use crate::{Command, Value};
+use crate::context::Context;
 
 /// Sum command - sums a list of integers
 pub struct SumCommand;
