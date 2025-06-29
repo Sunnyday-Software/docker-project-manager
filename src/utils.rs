@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
 use std::env;
+use std::path::{Path, PathBuf};
 
 #[cfg(windows)]
 use dirs::home_dir;
@@ -11,9 +11,9 @@ use uzers::os::unix::UserExt;
 #[cfg(unix)]
 use uzers::{get_current_gid, get_current_uid, get_user_by_uid};
 
+use crate::context::Context;
 use crate::docker::process_docker_version;
 use crate::model::*;
-use crate::context::Context;
 
 #[cfg(unix)]
 /// Ottiene l'ID utente, l'ID gruppo e il nome utente corrente sui sistemi Unix.
@@ -77,55 +77,6 @@ pub fn get_home_directory() -> Option<PathBuf> {
 /// * `Option<PathBuf>` - Attualmente restituisce sempre `None` su Windows
 pub fn get_home_directory() -> Option<PathBuf> {
   return dirs::home_dir();
-}
-
-/// Configura i percorsi del progetto necessari per l'esecuzione.
-///
-/// # Arguments
-/// * `docker_dev_path_str` - Percorso della directory dev/docker come stringa
-/// * `verbose` - Flag per abilitare l'output verboso
-///
-/// # Returns
-/// * `Result<(String, PathBuf), Box<dyn std::error::Error>>` - Tupla contenente:
-///   - Il percorso del progetto host come stringa
-///   - Il percorso della directory dev/docker come PathBuf
-///
-/// # Errors
-/// Restituisce un errore se:
-/// - Non è possibile determinare la directory corrente
-/// - Il percorso non è valido o non può essere convertito in stringa
-/// - La directory dev/docker non esiste o non è valida
-pub fn setup_project_paths(docker_dev_path_str: &str, verbose: bool) -> Result<(String, PathBuf), Box<dyn std::error::Error>>
-{
-  // Percorso del progetto host
-  let host_project_path = env::current_dir()?;
-  let host_project_path_str =
-    host_project_path.to_str().ok_or(ERROR_INVALID_PATH)?;
-
-  if verbose {
-    println!("RUST Project builder");
-    println!("* host_project_path: {}", host_project_path_str);
-  }
-
-  let docker_dev_path = Path::new(docker_dev_path_str);
-
-  if verbose {
-    println!("* docker_dev_path: {}", docker_dev_path.display());
-    println!("");
-  }
-  // Verifica che il percorso sia una directory
-  if !docker_dev_path.is_dir() {
-    eprintln!(
-      "Errore: '{}' non è una directory valida o non esiste.",
-      docker_dev_path.display()
-    );
-    return Err(ERROR_INVALID_DIRECTORY.into());
-  }
-
-  Ok((
-    host_project_path_str.to_string(),
-    docker_dev_path.to_path_buf(),
-  ))
 }
 
 /// Aggiorna le versioni di tutti i componenti Docker basandosi sui loro hash MD5.

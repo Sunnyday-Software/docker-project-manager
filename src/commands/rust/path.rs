@@ -1,11 +1,11 @@
-use crate::{CommandRegistry, Context, Value, tags};
 use crate::utils::debug_log;
+use crate::{CommandRegistry, Value, tags};
 use std::path::Path;
 
 /// Register path commands
 pub fn register_path_commands(registry: &mut CommandRegistry) {
-    // rust-path-join command
-    registry.register_closure_with_help_and_tag(
+  // rust-path-join command
+  registry.register_closure_with_help_and_tag(
         "rust-path-join",
         "Join path components together",
         "(rust-path-join base component1 component2 ...)",
@@ -37,8 +37,8 @@ pub fn register_path_commands(registry: &mut CommandRegistry) {
         },
     );
 
-    // rust-path-parent command
-    registry.register_closure_with_help_and_tag(
+  // rust-path-parent command
+  registry.register_closure_with_help_and_tag(
         "rust-path-parent",
         "Get the parent directory of a path",
         "(rust-path-parent path)",
@@ -71,8 +71,8 @@ pub fn register_path_commands(registry: &mut CommandRegistry) {
         },
     );
 
-    // rust-path-filename command
-    registry.register_closure_with_help_and_tag(
+  // rust-path-filename command
+  registry.register_closure_with_help_and_tag(
         "rust-path-filename",
         "Get the filename component of a path",
         "(rust-path-filename path)",
@@ -105,8 +105,8 @@ pub fn register_path_commands(registry: &mut CommandRegistry) {
         },
     );
 
-    // rust-path-extension command
-    registry.register_closure_with_help_and_tag(
+  // rust-path-extension command
+  registry.register_closure_with_help_and_tag(
         "rust-path-extension",
         "Get the file extension of a path",
         "(rust-path-extension path)",
@@ -139,8 +139,8 @@ pub fn register_path_commands(registry: &mut CommandRegistry) {
         },
     );
 
-    // rust-path-exists command
-    registry.register_closure_with_help_and_tag(
+  // rust-path-exists command
+  registry.register_closure_with_help_and_tag(
         "rust-path-exists",
         "Check if a path exists",
         "(rust-path-exists path)",
@@ -166,8 +166,8 @@ pub fn register_path_commands(registry: &mut CommandRegistry) {
         },
     );
 
-    // rust-path-is-dir command
-    registry.register_closure_with_help_and_tag(
+  // rust-path-is-dir command
+  registry.register_closure_with_help_and_tag(
         "rust-path-is-dir",
         "Check if a path is a directory",
         "(rust-path-is-dir path)",
@@ -193,8 +193,8 @@ pub fn register_path_commands(registry: &mut CommandRegistry) {
         },
     );
 
-    // rust-path-is-file command
-    registry.register_closure_with_help_and_tag(
+  // rust-path-is-file command
+  registry.register_closure_with_help_and_tag(
         "rust-path-is-file",
         "Check if a path is a file",
         "(rust-path-is-file path)",

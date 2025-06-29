@@ -211,7 +211,10 @@ impl ExecutionContext {
 /// Trait that defines the interface for all commands
 pub trait Command: std::fmt::Debug {
   /// Execute the command with the given context
-  fn execute(&self, context: &mut ExecutionContext) -> Result<(), Box<dyn Error>>;
+  fn execute(
+    &self,
+    context: &mut ExecutionContext,
+  ) -> Result<(), Box<dyn Error>>;
 
   /// Get the name of the command
   fn name(&self) -> &'static str;
@@ -225,17 +228,29 @@ pub trait Command: std::fmt::Debug {
   }
 
   /// Get the command name this parser handles
-  fn command_name() -> &'static str where Self: Sized;
+  fn command_name() -> &'static str
+  where
+    Self: Sized;
 
   /// Try to parse a command from the given arguments
   /// Returns Some(Result) if this command can handle the parsing, None otherwise
-  fn try_parse(command: &str, args: &mut std::iter::Peekable<std::vec::IntoIter<String>>) -> Option<Result<Box<dyn Command>, String>> where Self: Sized;
+  fn try_parse(
+    command: &str,
+    args: &mut std::iter::Peekable<std::vec::IntoIter<String>>,
+  ) -> Option<Result<Box<dyn Command>, String>>
+  where
+    Self: Sized;
 }
 
 /// Registry for managing command parsers
 #[derive(Debug)]
 pub struct CommandRegistry {
-  parsers: Vec<fn(&str, &mut std::iter::Peekable<std::vec::IntoIter<String>>) -> Option<Result<Box<dyn Command>, String>>>,
+  parsers: Vec<
+    fn(
+      &str,
+      &mut std::iter::Peekable<std::vec::IntoIter<String>>,
+    ) -> Option<Result<Box<dyn Command>, String>>,
+  >,
 }
 
 impl CommandRegistry {
@@ -249,7 +264,11 @@ impl CommandRegistry {
     self.parsers.push(T::try_parse);
   }
 
-  pub fn parse_command(&self, command: &str, args: &mut std::iter::Peekable<std::vec::IntoIter<String>>) -> Result<Box<dyn Command>, String> {
+  pub fn parse_command(
+    &self,
+    command: &str,
+    args: &mut std::iter::Peekable<std::vec::IntoIter<String>>,
+  ) -> Result<Box<dyn Command>, String> {
     for parser in &self.parsers {
       if let Some(result) = parser(command, args) {
         return result;

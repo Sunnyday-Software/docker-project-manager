@@ -27,10 +27,6 @@ use std::collections::HashMap;
 use std::fmt;
 use std::sync::{Arc, Mutex};
 
-use crate::commands::{
-  DebugCommand, PipeCommand, PrintCommand, SumCommand, register_help_commands,
-  register_list_commands,
-};
 use crate::context::Context;
 
 /// Universal value type for the Lisp interpreter
@@ -729,6 +725,8 @@ pub fn value_to_bool(value: &Value) -> Result<bool, String> {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::commands::{PrintCommand, SumCommand, PipeCommand, DebugCommand};
+  use crate::commands::{register_list_commands, register_help_commands};
 
   /// Test helper function to register builtin commands for testing
   fn register_test_commands(registry: &mut CommandRegistry) {

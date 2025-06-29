@@ -5,97 +5,6 @@ use std::io::{self, BufRead, BufReader, Read, Write};
 use std::path::Path;
 use walkdir::WalkDir;
 
-/// Legge un file .env e restituisce le variabili d'ambiente come HashMap.
-///
-/// # Arguments
-/// * `path` - Percorso del file .env da leggere
-///
-/// # Returns
-/// * `io::Result<HashMap<String, String>>` - HashMap contenente le variabili d'ambiente lette dal file,
-///   o HashMap vuoto se il file non esiste
-///
-/// # Note
-/// - Le righe che iniziano con '#' vengono considerate commenti e ignorate
-/// - Le righe vuote vengono ignorate
-/// - Le variabili devono essere nel formato KEY=VALUE
-pub fn read_env_file(path: &str) -> io::Result<HashMap<String, String>> {
-  let mut env_map = HashMap::new();
-  if Path::new(path).exists() {
-    let file = File::open(path)?;
-    let reader = BufReader::new(file);
-
-    for line in reader.lines() {
-      let line = line?;
-      // Salta le righe di commento o vuote
-      if line.starts_with('#') || line.trim().is_empty() {
-        continue;
-      }
-      if let Some((key, value)) = line.split_once('=') {
-        env_map.insert(key.to_string(), value.to_string());
-      }
-    }
-  }
-  Ok(env_map)
-}
-
-/// Scrive le variabili d'ambiente in un file .env.
-///
-/// # Arguments
-/// * `path` - Percorso del file .env da scrivere
-/// * `env_map` - HashMap contenente le variabili d'ambiente da scrivere
-///
-/// # Returns
-/// * `io::Result<()>` - Ok se la scrittura è avvenuta con successo, Err altrimenti
-///
-/// # Note
-/// - Le variabili vengono scritte in ordine alfabetico per chiave
-/// - Il file viene creato se non esiste, altrimenti viene sovrascritto
-pub fn write_env_file(
-  path: &str,
-  env_map: &HashMap<String, String>,
-) -> io::Result<()> {
-  let mut file = OpenOptions::new()
-    .write(true)
-    .create(true)
-    .truncate(true)
-    .open(path)?;
-  let mut keys: Vec<_> = env_map.keys().collect();
-  keys.sort(); // Ordina le chiavi alfabeticamente
-
-  for key in keys {
-    if let Some(value) = env_map.get(key) {
-      writeln!(file, "{}={}", key, value)?;
-    }
-  }
-
-  Ok(())
-}
-
-/// Scrive le variabili d'ambiente in un file .env, con messaggio di log.
-///
-/// # Arguments
-/// * `env_file` - Percorso del file .env da scrivere
-/// * `env_vars` - HashMap contenente le variabili d'ambiente da scrivere
-/// * `verbose` - Flag per abilitare l'output verboso
-///
-/// # Returns
-/// * `Result<(), Box<dyn std::error::Error>>` - Ok se la scrittura è avvenuta con successo, Err altrimenti
-pub fn write_env_to_file(
-  env_file: &str,
-  env_vars: &HashMap<String, String>,
-  verbose: bool,
-) -> Result<(), Box<dyn std::error::Error>> {
-  use crate::model::MSG_WRITING_ENV_FILE;
-  if verbose {
-    println!("{}", MSG_WRITING_ENV_FILE);
-  }
-  write_env_file(env_file, env_vars)?;
-  if verbose {
-    println!("Environment file written successfully: {}", env_file);
-  }
-  Ok(())
-}
-
 /// Calcola l'hash MD5 di una directory, considerando tutti i file
 /// in essa contenuti.
 ///
@@ -114,7 +23,9 @@ pub fn write_env_to_file(
 /// - Per ogni file viene calcolato l'MD5, poi tutti gli MD5 vengono concatenati
 /// - Viene calcolato l'MD5 della concatenazione e vengono restituiti
 ///   i primi 8 caratteri
-pub fn compute_dir_md5(dir: &str) -> Result<String, Box<dyn std::error::Error>> {
+pub fn compute_dir_md5(
+  dir: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
   let path = Path::new(dir);
 
   // Verifica che il percorso sia una directory esistente
@@ -162,4 +73,67 @@ pub fn compute_dir_md5(dir: &str) -> Result<String, Box<dyn std::error::Error>> 
   let md5_short = &final_md5[..8];
 
   Ok(md5_short.to_string())
+}
+
+/// Read environment variables from a .env file
+///
+/// # Arguments
+/// * `path` - Path to the .env file to read
+///
+/// # Returns
+/// * `io::Result<HashMap<String, String>>` - HashMap containing the environment variables
+pub fn read_env_file(path: &str) -> io::Result<HashMap<String, String>> {
+  let file = File::open(path)?;
+  let reader = BufReader::new(file);
+  let mut env_vars = HashMap::new();
+
+  for line in reader.lines() {
+    let line = line?;
+    let trimmed = line.trim();
+
+    // Skip empty lines and comments
+    if trimmed.is_empty() || trimmed.starts_with('#') {
+      continue;
+    }
+
+    // Parse key=value format
+    if let Some(eq_pos) = trimmed.find('=') {
+      let key = trimmed[..eq_pos].trim().to_string();
+      let value = trimmed[eq_pos + 1..].trim().to_string();
+
+      if !key.is_empty() {
+        env_vars.insert(key, value);
+      }
+    }
+  }
+
+  Ok(env_vars)
+}
+
+/// Write environment variables to a .env file
+///
+/// # Arguments
+/// * `path` - Path to the .env file to write
+/// * `env_vars` - HashMap containing the environment variables to write
+///
+/// # Returns
+/// * `io::Result<()>` - Result indicating success or failure
+pub fn write_env_file(path: &str, env_vars: &HashMap<String, String>) -> io::Result<()> {
+  let mut file = OpenOptions::new()
+    .write(true)
+    .create(true)
+    .truncate(true)
+    .open(path)?;
+
+  // Collect and sort keys alphabetically
+  let mut keys: Vec<&String> = env_vars.keys().collect();
+  keys.sort();
+
+  // Write entries in alphabetical order by key
+  for key in keys {
+    let value = &env_vars[key];
+    writeln!(file, "{}={}", key, value)?;
+  }
+
+  Ok(())
 }

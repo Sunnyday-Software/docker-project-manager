@@ -1,8 +1,6 @@
 use std::env;
 use std::io::{self, BufRead, BufReader};
 
-mod clean_commands;
-mod cli_docs;
 mod commands;
 mod config_commands;
 mod context;
@@ -11,18 +9,16 @@ mod docker;
 mod emoji;
 mod env_commands;
 mod env_ops;
-mod execution;
 mod file_ops;
 mod lisp_interpreter;
 mod model;
-mod run_commands;
 mod utils;
 mod version_commands;
 
 use commands::{
   ConcatCommand, DebugCommand, MultiplyCommand, PipeCommand, PrintCommand,
-  SumCommand, register_basedir_commands, register_help_commands,
-  register_list_commands, register_all_rust_commands, register_app_commands,
+  SumCommand, register_all_rust_commands, register_app_commands,
+  register_basedir_commands, register_help_commands, register_list_commands,
 };
 use context::Context;
 use lisp_interpreter::*;
@@ -98,9 +94,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
   } else {
     // Command line arguments provided, evaluate them as Lisp expressions
-    for (i, arg) in args.iter().enumerate() {
+    for (_, arg) in args.iter().enumerate() {
       match evaluate_string(arg, &mut context) {
-        Ok(result) => {}
+        Ok(_) => {}
         Err(e) => {
           println!("Error: {}\n", e);
           return Err(e.into());

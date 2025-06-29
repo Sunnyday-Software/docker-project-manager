@@ -1,11 +1,11 @@
-use crate::{CommandRegistry, Context, Value, tags};
 use crate::utils::debug_log;
+use crate::{CommandRegistry, Value, tags};
 use std::process::Command;
 
 /// Register process commands
 pub fn register_process_commands(registry: &mut CommandRegistry) {
-    // rust-process-command command
-    registry.register_closure_with_help_and_tag(
+  // rust-process-command command
+  registry.register_closure_with_help_and_tag(
         "rust-process-command",
         "Execute a system command and return the exit status",
         "(rust-process-command program arg1 arg2 ...)",
@@ -48,8 +48,8 @@ pub fn register_process_commands(registry: &mut CommandRegistry) {
         },
     );
 
-    // rust-process-output command
-    registry.register_closure_with_help_and_tag(
+  // rust-process-output command
+  registry.register_closure_with_help_and_tag(
         "rust-process-output",
         "Execute a system command and return the output (stdout, stderr, status)",
         "(rust-process-output program arg1 arg2 ...)",

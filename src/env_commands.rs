@@ -22,10 +22,9 @@ impl Command for WriteEnvCommand {
       .as_ref()
       .ok_or("Output environment file not specified")?;
 
-    crate::file_ops::write_env_to_file(
+    crate::file_ops::write_env_file(
       output_env,
       existing_env_vars,
-      context.verbose,
     )?;
     Ok(())
   }
@@ -66,4 +65,3 @@ impl Command for WriteEnvCommand {
     }
   }
 }
-

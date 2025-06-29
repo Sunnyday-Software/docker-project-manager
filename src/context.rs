@@ -7,6 +7,17 @@ use crate::lisp_interpreter::{CommandRegistry, Value};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+/// Version information for a single element to be versioned
+#[derive(Debug, Clone, PartialEq)]
+pub struct VersionInfo {
+  /// Variable name: same as directory name in uppercase with non-alphanumeric chars replaced by underscore
+  pub v_name: String,
+  /// Real name: actual directory name
+  pub real_name: String,
+  /// Checksum calculated with compute_dir_md5()
+  pub checksum: String,
+}
+
 /// Execution context for commands
 /// Contains the command registry and any shared state
 pub struct Context {
@@ -14,6 +25,8 @@ pub struct Context {
   pub registry: CommandRegistry,
   /// Variables storage for the session
   pub variables: HashMap<String, Value>,
+  /// Version information storage
+  pub versions: HashMap<String, VersionInfo>,
   /// Debug printing flag - fixed context variable
   pub debug_print: bool,
   pub basedir: PathBuf,
@@ -25,6 +38,7 @@ impl Context {
     Self {
       registry,
       variables: HashMap::new(),
+      versions: HashMap::new(),
       debug_print: false,
       basedir: PathBuf::from("."),
     }
@@ -38,6 +52,21 @@ impl Context {
   /// Get a variable from the context
   pub fn get_variable(&self, name: &str) -> Option<&Value> {
     self.variables.get(name)
+  }
+
+  /// Set version information in the context
+  pub fn set_version(&mut self, key: String, version_info: VersionInfo) {
+    self.versions.insert(key, version_info);
+  }
+
+  /// Get version information from the context
+  pub fn get_version(&self, key: &str) -> Option<&VersionInfo> {
+    self.versions.get(key)
+  }
+
+  /// Get all versions
+  pub fn get_all_versions(&self) -> &HashMap<String, VersionInfo> {
+    &self.versions
   }
 
   /// Set the debug print flag
@@ -83,6 +112,19 @@ impl Context {
     } else {
       for (name, value) in &self.variables {
         output.push_str(&format!("  {} = {}\n", name, value.to_string()));
+      }
+    }
+
+    // Print version information
+    output.push_str("\n--- Version Information ---\n");
+    if self.versions.is_empty() {
+      output.push_str("  (no versions set)\n");
+    } else {
+      for (key, version_info) in &self.versions {
+        output.push_str(&format!(
+          "  {} = {{ v_name: {}, real_name: {}, checksum: {} }}\n",
+          key, version_info.v_name, version_info.real_name, version_info.checksum
+        ));
       }
     }
 

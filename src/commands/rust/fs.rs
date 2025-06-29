@@ -1,11 +1,11 @@
-use crate::{CommandRegistry, Context, Value, tags};
 use crate::utils::debug_log;
+use crate::{CommandRegistry, Value, tags};
 use std::fs;
 
 /// Register filesystem commands
 pub fn register_fs_commands(registry: &mut CommandRegistry) {
-    // rust-fs-read-to-string command
-    registry.register_closure_with_help_and_tag(
+  // rust-fs-read-to-string command
+  registry.register_closure_with_help_and_tag(
         "rust-fs-read-to-string",
         "Read the entire contents of a file into a string",
         "(rust-fs-read-to-string path)",
@@ -34,8 +34,8 @@ pub fn register_fs_commands(registry: &mut CommandRegistry) {
         },
     );
 
-    // rust-fs-write command
-    registry.register_closure_with_help_and_tag(
+  // rust-fs-write command
+  registry.register_closure_with_help_and_tag(
         "rust-fs-write",
         "Write a string to a file, creating the file if it doesn't exist",
         "(rust-fs-write path content)",
@@ -69,8 +69,8 @@ pub fn register_fs_commands(registry: &mut CommandRegistry) {
         },
     );
 
-    // rust-fs-create-dir command
-    registry.register_closure_with_help_and_tag(
+  // rust-fs-create-dir command
+  registry.register_closure_with_help_and_tag(
         "rust-fs-create-dir",
         "Create a new directory",
         "(rust-fs-create-dir path)",
@@ -99,8 +99,8 @@ pub fn register_fs_commands(registry: &mut CommandRegistry) {
         },
     );
 
-    // rust-fs-remove-file command
-    registry.register_closure_with_help_and_tag(
+  // rust-fs-remove-file command
+  registry.register_closure_with_help_and_tag(
         "rust-fs-remove-file",
         "Remove a file from the filesystem",
         "(rust-fs-remove-file path)",
@@ -129,8 +129,8 @@ pub fn register_fs_commands(registry: &mut CommandRegistry) {
         },
     );
 
-    // rust-fs-copy command
-    registry.register_closure_with_help_and_tag(
+  // rust-fs-copy command
+  registry.register_closure_with_help_and_tag(
         "rust-fs-copy",
         "Copy a file from source to destination",
         "(rust-fs-copy source destination)",
