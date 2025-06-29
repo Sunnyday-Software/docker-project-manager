@@ -13,7 +13,6 @@ mod file_ops;
 mod lisp_interpreter;
 mod model;
 mod utils;
-mod version_commands;
 
 use commands::{
   ConcatCommand, DebugCommand, MultiplyCommand, PipeCommand, PrintCommand,

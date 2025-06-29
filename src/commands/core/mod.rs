@@ -6,7 +6,9 @@ pub mod list_utils;
 pub mod multiply;
 pub mod pipe;
 pub mod print;
+pub mod read_env;
 pub mod sum;
+pub mod vars;
 
 pub use basedir::register_basedir_commands;
 pub use concat::ConcatCommand;
@@ -16,4 +18,6 @@ pub use list_utils::register_list_commands;
 pub use multiply::MultiplyCommand;
 pub use pipe::PipeCommand;
 pub use print::PrintCommand;
+pub use read_env::register_app_commands;
 pub use sum::SumCommand;
+pub use vars::register_var_commands;

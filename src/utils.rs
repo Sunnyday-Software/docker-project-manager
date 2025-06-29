@@ -79,33 +79,6 @@ pub fn get_home_directory() -> Option<PathBuf> {
   return dirs::home_dir();
 }
 
-/// Aggiorna le versioni di tutti i componenti Docker basandosi sui loro hash MD5.
-///
-/// # Arguments
-/// * `md5_values` - HashMap contenente i percorsi delle directory e i relativi hash MD5
-/// * `versions_folder` - Directory dove salvare i file di versioning
-/// * `verbose` - Flag per abilitare l'output verboso
-///
-/// # Returns
-/// * `Result<(), Box<dyn std::error::Error>>` - Ok se tutte le operazioni sono completate con successo, Err altrimenti
-///
-/// # Note
-/// - Itera su tutti i componenti e aggiorna le loro versioni se necessario
-/// - Utilizza `process_docker_version` per gestire il versioning di ogni singolo componente
-pub fn update_versions(
-  md5_values: &HashMap<String, String>,
-  versions_folder: &str,
-  verbose: bool,
-) -> Result<(), Box<dyn std::error::Error>> {
-  if verbose {
-    println!("{}", MSG_UPDATING_VERSIONS);
-  }
-  for (dir_path, md5_value) in md5_values {
-    process_docker_version(dir_path, md5_value, versions_folder, verbose)?;
-  }
-  Ok(())
-}
-
 /// Prints a debug message if debug_print is enabled in the context.
 ///
 /// # Arguments

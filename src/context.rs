@@ -50,8 +50,31 @@ impl Context {
   }
 
   /// Get a variable from the context
-  pub fn get_variable(&self, name: &str) -> Option<&Value> {
-    self.variables.get(name)
+  pub fn get_variable(&self, name: &str) -> Option<Value> {
+    // Check if it's a context attribute request
+    if let Some(ctx_attr) = name.strip_prefix("CTX:") {
+      return self.get_context_attribute(ctx_attr);
+    }
+
+    // Regular variable lookup
+    self.variables.get(name).cloned()
+  }
+
+  /// Get context attributes by name
+  ///
+  /// # Arguments
+  /// * `attr_name` - Name of the context attribute
+  ///
+  /// # Returns
+  /// * `Option<Value>` - The context attribute as a Value
+  fn get_context_attribute(&self, attr_name: &str) -> Option<Value> {
+    match attr_name {
+      "basedir" => Some(Value::Str(self.basedir.to_string_lossy().to_string())),
+      "debug_print" => Some(Value::Bool(self.debug_print)),
+
+      // Aggiungi altri attributi del context qui
+      _ => None,
+    }
   }
 
   /// Set version information in the context
@@ -123,7 +146,10 @@ impl Context {
       for (key, version_info) in &self.versions {
         output.push_str(&format!(
           "  {} = {{ v_name: {}, real_name: {}, checksum: {} }}\n",
-          key, version_info.v_name, version_info.real_name, version_info.checksum
+          key,
+          version_info.v_name,
+          version_info.real_name,
+          version_info.checksum
         ));
       }
     }
