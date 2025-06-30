@@ -55,4 +55,6 @@ else
     rustup update
 fi
 
+echo "rustc --version :"
+rustc --version
 echo "=== Installazione di Rust completata con successo ==="
