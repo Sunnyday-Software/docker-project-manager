@@ -14,7 +14,7 @@ if not "%DESIRED_VERSION%"=="" (
 REM Verifica se Rust (cargo) è già installato
 where cargo >nul 2>&1
 if %ERRORLEVEL% equ 0 (
-    echo Rust (cargo) è già installato.
+    echo Rust ^(cargo^) e gia installato.
 ) else (
     echo Installazione di Rust...
 
@@ -32,9 +32,9 @@ if %ERRORLEVEL% equ 0 (
     REM Verifica se l'installazione è riuscita
     where cargo >nul 2>&1
     if %ERRORLEVEL% equ 0 (
-        echo Rust è stato installato con successo.
+        echo Rust e stato installato con successo.
     ) else (
-        echo Errore: l'installazione di Rust non è riuscita.
+        echo Errore: l'installazione di Rust non e riuscita.
         exit /b 1
     )
 )
@@ -42,9 +42,9 @@ if %ERRORLEVEL% equ 0 (
 REM Verifica se rustup è installato
 where rustup >nul 2>&1
 if %ERRORLEVEL% equ 0 (
-    echo rustup è già installato.
+    echo rustup e gia installato.
 ) else (
-    echo Errore: rustup non è stato installato correttamente.
+    echo Errore: rustup non e stato installato correttamente.
     exit /b 1
 )
 
@@ -55,7 +55,7 @@ if not "%DESIRED_VERSION%"=="" (
     rustup default %DESIRED_VERSION%
     echo Versione %DESIRED_VERSION% impostata come default
 ) else (
-    echo Aggiornamento di Rust alla versione più recente...
+    echo Aggiornamento di Rust alla versione piu recente...
     rustup update
 )
 
