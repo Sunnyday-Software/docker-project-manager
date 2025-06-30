@@ -8,6 +8,36 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Funzione per estrarre la versione Rust richiesta dal Cargo.toml
+get_required_rust_version() {
+    if [ -f "Cargo.toml" ]; then
+        grep "^rust-version" Cargo.toml | sed 's/rust-version = "\(.*\)"/\1/' | tr -d '"'
+    else
+        echo ""
+    fi
+}
+
+# Funzione per ottenere la versione corrente di Rust
+get_current_rust_version() {
+    if command_exists rustc; then
+        rustc --version | awk '{print $2}'
+    else
+        echo ""
+    fi
+}
+
+# Funzione per confrontare le versioni (restituisce 0 se current >= required)
+version_compare() {
+    local current="$1"
+    local required="$2"
+
+    # Converte le versioni in numeri confrontabili
+    current_num=$(echo "$current" | awk -F. '{printf "%d%03d%03d", $1, $2, $3}')
+    required_num=$(echo "$required" | awk -F. '{printf "%d%03d%03d", $1, $2, $3}')
+
+    [ "$current_num" -ge "$required_num" ]
+}
+
 # Aggiorna il PATH per includere Rust se è già installato ma non nel PATH
 if [ -f "$HOME/.cargo/env" ]; then
     source "$HOME/.cargo/env"
@@ -32,6 +62,30 @@ if ! command_exists cargo || ! command_exists rustup; then
         echo "Prova ad aprire un nuovo terminale o eseguire manualmente: source $HOME/.cargo/env"
         exit 1
     fi
+fi
+
+# Verifica la versione di Rust
+REQUIRED_RUST_VERSION=$(get_required_rust_version)
+CURRENT_RUST_VERSION=$(get_current_rust_version)
+
+if [ -n "$REQUIRED_RUST_VERSION" ]; then
+    echo "Versione Rust richiesta: $REQUIRED_RUST_VERSION"
+    echo "Versione Rust corrente: $CURRENT_RUST_VERSION"
+
+    if [ -z "$CURRENT_RUST_VERSION" ]; then
+        echo "Errore: impossibile determinare la versione corrente di Rust"
+        exit 1
+    fi
+
+    if ! version_compare "$CURRENT_RUST_VERSION" "$REQUIRED_RUST_VERSION"; then
+        echo "Errore: la versione di Rust installata ($CURRENT_RUST_VERSION) è inferiore alla versione richiesta ($REQUIRED_RUST_VERSION)"
+        echo "Aggiorna Rust con: rustup update"
+        exit 1
+    fi
+
+    echo "✓ Versione di Rust verificata con successo"
+else
+    echo "Avviso: impossibile determinare la versione Rust richiesta dal Cargo.toml"
 fi
 
 # Estrae il nome del pacchetto dal Cargo.toml
