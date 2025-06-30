@@ -17,76 +17,40 @@ get_required_rust_version() {
     fi
 }
 
-# Funzione per ottenere la versione corrente di Rust
-get_current_rust_version() {
-    if command_exists rustc; then
-        rustc --version | awk '{print $2}'
-    else
-        echo ""
-    fi
-}
-
-# Funzione per confrontare le versioni (restituisce 0 se current >= required)
-version_compare() {
-    local current="$1"
-    local required="$2"
-
-    # Converte le versioni in numeri confrontabili
-    current_num=$(echo "$current" | awk -F. '{printf "%d%03d%03d", $1, $2, $3}')
-    required_num=$(echo "$required" | awk -F. '{printf "%d%03d%03d", $1, $2, $3}')
-
-    [ "$current_num" -ge "$required_num" ]
-}
-
 # Aggiorna il PATH per includere Rust se è già installato ma non nel PATH
 if [ -f "$HOME/.cargo/env" ]; then
     source "$HOME/.cargo/env"
     echo "Ambiente Rust caricato."
 fi
 
-# Verifica se Rust è installato e lo installa se necessario
-if ! command_exists cargo || ! command_exists rustup; then
-    echo "Rust non è installato. Avvio dell'installazione..."
-    chmod +x install-rust-linux.sh
-    ./install-rust-linux.sh
-
-    # Aggiorna il PATH per la sessione corrente dopo l'installazione
-    if [ -f "$HOME/.cargo/env" ]; then
-        source "$HOME/.cargo/env"
-        echo "Ambiente Rust aggiornato."
-    fi
-
-    # Verifica che cargo e rustup siano ora disponibili
-    if ! command_exists cargo || ! command_exists rustup; then
-        echo "Errore: Impossibile trovare cargo o rustup nel PATH anche dopo l'installazione."
-        echo "Prova ad aprire un nuovo terminale o eseguire manualmente: source $HOME/.cargo/env"
-        exit 1
-    fi
-fi
-
-# Verifica la versione di Rust
+# Ottieni la versione Rust richiesta dal Cargo.toml
 REQUIRED_RUST_VERSION=$(get_required_rust_version)
-CURRENT_RUST_VERSION=$(get_current_rust_version)
 
+# Installa o verifica Rust con la versione richiesta
+echo "Verifica e installazione di Rust..."
+chmod +x install-rust-linux.sh
 if [ -n "$REQUIRED_RUST_VERSION" ]; then
     echo "Versione Rust richiesta: $REQUIRED_RUST_VERSION"
-    echo "Versione Rust corrente: $CURRENT_RUST_VERSION"
-
-    if [ -z "$CURRENT_RUST_VERSION" ]; then
-        echo "Errore: impossibile determinare la versione corrente di Rust"
-        exit 1
-    fi
-
-    if ! version_compare "$CURRENT_RUST_VERSION" "$REQUIRED_RUST_VERSION"; then
-        echo "Errore: la versione di Rust installata ($CURRENT_RUST_VERSION) è inferiore alla versione richiesta ($REQUIRED_RUST_VERSION)"
-        echo "Aggiorna Rust con: rustup update"
-        exit 1
-    fi
-
-    echo "✓ Versione di Rust verificata con successo"
+    ./install-rust-linux.sh "$REQUIRED_RUST_VERSION"
 else
-    echo "Avviso: impossibile determinare la versione Rust richiesta dal Cargo.toml"
+    echo "Nessuna versione specifica richiesta, uso la versione più recente"
+    ./install-rust-linux.sh
 fi
+
+# Aggiorna il PATH per la sessione corrente
+if [ -f "$HOME/.cargo/env" ]; then
+    source "$HOME/.cargo/env"
+    echo "Ambiente Rust caricato."
+fi
+
+# Verifica che cargo e rustup siano disponibili
+if ! command_exists cargo || ! command_exists rustup; then
+    echo "Errore: Impossibile trovare cargo o rustup nel PATH."
+    echo "Prova ad aprire un nuovo terminale o eseguire manualmente: source $HOME/.cargo/env"
+    exit 1
+fi
+
+echo "✓ Rust configurato correttamente"
 
 # Estrae il nome del pacchetto dal Cargo.toml
 PACKAGE_NAME=$(cargo metadata --format-version 1 --no-deps | sed -n 's/.*"name":"\([^"]*\)".*/\1/p' | head -n 1)
