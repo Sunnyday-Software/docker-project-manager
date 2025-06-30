@@ -49,7 +49,7 @@ REM Crea directory per i binari compilati
 if not exist build mkdir build
 
 echo === Pulizia e aggiornamento del progetto ===
-cargo clean
+REM cargo clean
 cargo update
 
 REM Compilazione per Windows

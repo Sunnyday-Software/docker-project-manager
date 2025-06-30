@@ -1,9 +1,7 @@
-name: app-build
+name: Build Test (PR)
 
 on:
   pull_request:
-    branches: [ "main" ]
-  push:
     branches: [ "main" ]
 
 env:
