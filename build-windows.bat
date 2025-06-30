@@ -2,13 +2,35 @@
 setlocal EnableDelayedExpansion
 REM Script per compilare il progetto Rust per Windows
 
-REM Verifica se Rust è installato e lo installa se necessario
+REM Funzione per estrarre la versione Rust richiesta dal Cargo.toml
+REM Estrae la versione Rust richiesta dal Cargo.toml
+set REQUIRED_RUST_VERSION=
+for /f "tokens=2 delims==" %%a in ('findstr /C:"rust-version =" Cargo.toml') do (
+    set REQUIRED_RUST_VERSION=%%a
+    set REQUIRED_RUST_VERSION=!REQUIRED_RUST_VERSION:"=!
+    set REQUIRED_RUST_VERSION=!REQUIRED_RUST_VERSION: =!
+)
+
+REM Installa o verifica Rust con la versione richiesta
+echo Verifica e installazione di Rust...
+if not "%REQUIRED_RUST_VERSION%"=="" (
+    echo Versione Rust richiesta: %REQUIRED_RUST_VERSION%
+    call install-rust-windows.bat "%REQUIRED_RUST_VERSION%"
+) else (
+    echo Nessuna versione specifica richiesta, uso la versione più recente
+    call install-rust-windows.bat
+)
+
+REM Verifica che cargo e rustup siano disponibili
 where cargo >nul 2>&1
 where rustup >nul 2>&1
 if %ERRORLEVEL% neq 0 (
-    echo Rust non è installato. Avvio dell'installazione...
-    call install-rust-windows.bat
+    echo Errore: Impossibile trovare cargo o rustup nel PATH.
+    echo Prova a riavviare il prompt dei comandi o reinstallare Rust
+    exit /b 1
 )
+
+echo ✓ Rust configurato correttamente
 
 REM Estrae il nome del pacchetto dal Cargo.toml
 for /f "tokens=2 delims==" %%a in ('findstr /C:"name =" Cargo.toml') do (

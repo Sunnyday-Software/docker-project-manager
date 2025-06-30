@@ -8,6 +8,8 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+
+
 # Verifica se Rust è installato e lo installa se necessario
 if ! command_exists cargo || ! command_exists rustup; then
     echo "Rust non è installato. Avvio dell'installazione..."
