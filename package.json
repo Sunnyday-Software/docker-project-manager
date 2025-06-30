@@ -1,0 +1,17 @@
+{
+  "name": "docker-project-manager",
+  "version": "1.0.0",
+  "description": "Docker Project Manager - Rust CLI tool",
+  "private": true,
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/exec": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^10.0.6",
+    "semantic-release": "^23.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Sunnyday-Software/docker-project-manager.git"
+  }
+}
