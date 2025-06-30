@@ -1,190 +1,369 @@
-# Docker Project Manager
+# Docker Project Manager (DPM)
 
 [![Rust](https://img.shields.io/badge/Built%20with-Rust-orange?logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![Docker](https://img.shields.io/badge/Compatible%20with-Docker-blue?logo=docker&logoColor=white)](https://www.docker.com/)
 
-A lightweight Rust utility designed to simplify Docker integration within your
-development workflow, leveraging dynamic
-environment management, cross-platform compatibility, and automated build
-triggers.
+A Docker Project Manager written in Rust that provides a **Lisp-based command interface** for managing Docker environments and project configurations. The project uses a custom Lisp interpreter to execute commands and manage Docker project workflows.
 
 ---
 
 ## 🚀 Features Overview
 
-- ✅ **Automatic `.env` & `.env.local` Management:**  
-  Easy, structured loading and merging of environment variables for different
-  environments and host-specific overrides.
+- ✅ **Lisp-based Command Interface:**  
+  Custom Lisp interpreter with S-expression syntax for powerful command composition and scripting capabilities.
 
-- ✅ **Directory-based MD5 Checksums:**  
-  Detect directory changes through MD5 checksums, automating Docker rebuild
-  triggers upon configuration changes.
+- ✅ **Comprehensive Rust Standard Library Integration:**  
+  Built-in commands for environment variables, filesystem operations, path manipulation, and process execution.
+
+- ✅ **Docker Environment Management:**  
+  Specialized commands for Docker integration, version management, and environment variable handling.
 
 - ✅ **Cross-platform Compatibility:**  
-  Automatically handles Docker socket (`docker.sock`) mapping for Linux, macOS,
-  and Windows.
+  Supports Linux, macOS, and Windows with platform-specific optimizations and build scripts.
 
-- ✅ **Dynamic UID & GID Management (Unix-based):**  
-  Automatically fetches current UID/GID, ensuring file permission consistency
-  across host and container.
+- ✅ **Extensible Command System:**  
+  Easy-to-extend architecture for adding new commands through both struct-based and closure-based implementations.
 
-- ✅ **Semantic Versioning:**  
-  Tracks changes to Docker components using MD5 checksums and automatically 
-  updates version numbers (MAJOR.MINOR.PATCH) when changes are detected.
-
-- ✅ **Command-line Interface:**  
-  Flexible CLI with options for reading/writing environment files, updating 
-  versions, and executing Docker commands with the appropriate environment.
+- ✅ **Advanced Configuration Management:**  
+  Project configuration handling with both Lisp-based and traditional CLI interfaces.
 
 ---
 
 ## 📦 Project Structure
 
 ```sh
-your-project-root/
-├── dev/docker/           # Directory scanned for docker images checksums
-├── dev/docker_versions/  # Directory for storing component version information
-├── .env                  # Base environment file (default variables)
-├── .env.local            # Optional overrides for your local settings
-├── .env.docker           # Generated environment file for Docker Compose
-└── dpm                   # Docker Project Manager executable
+docker-project-manager/
+├── src/
+│   ├── main.rs                    # Entry point and command registration
+│   ├── lisp_interpreter.rs        # Core Lisp interpreter functionality
+│   ├── commands/                  # Command implementations
+│   │   ├── rust/                  # Rust standard library commands
+│   │   │   ├── env.rs            # Environment variable commands
+│   │   │   ├── fs.rs             # Filesystem operation commands
+│   │   │   ├── path.rs           # Path manipulation commands
+│   │   │   └── process.rs        # Process execution commands
+│   │   ├── app/                  # Application-specific commands
+│   │   └── core/                 # Core system commands
+│   ├── docker.rs                 # Docker-specific operations
+│   ├── core.rs                   # Configuration and alternative CLI
+│   └── utils.rs                  # Utility functions
+├── build-linux.sh                # Linux build script
+├── build-macos.sh                # macOS build script
+├── build-windows.bat             # Windows build script
+├── Cargo.toml                    # Rust project configuration
+├── rustfmt.toml                  # Code formatting configuration
+├── deny.toml                     # Security and license compliance
+└── dpm                           # Docker Project Manager executable
 ```
 
 ---
 
 ## 🛠️ Usage Instructions
 
-### 1. Setup Your Environment Files
+### 1. Lisp Command Interface
 
-Prepare your default `.env` file in the project root:
+DPM provides a powerful Lisp-based command interface using S-expression syntax. Commands are executed using parentheses notation:
 
-```bash
-PROJECT_NAME=my-awesome-project
-#DOCKER_HOST_MAP will be handled automatically; add here only if necessary
+```lisp
+(command-name arg1 arg2 ...)
 ```
 
-Optional local overrides can be set in `.env.local`:
+### 2. Running Commands
+
+Start the DPM interpreter and execute Lisp commands:
 
 ```bash
-DOCKER_HOST_MAP=/var/run/docker.sock:/var/run/docker.sock
+./dpm
 ```
 
-> **Recommended practice:**  
-> Only use `.env.local` to store sensitive data or settings specific to the
-> local environment.
+### 3. Available Command Categories
 
-### 2. Command-Line Interface
+#### Environment Commands
+```lisp
+; Get current working directory
+(rust-env-current-dir)
 
-The Docker Project Manager provides a flexible command-line interface with the following options:
+; Get environment variable value
+(rust-env-var "PATH")
 
-```bash
-dpm [OPTIONS] [-- DOCKER_ARGS...]
+; List all environment variables
+(rust-env-vars)
+
+; Get user's home directory
+(rust-env-home-dir)
 ```
 
-Options:
-- `-i, --input-env <FILE>` - File .env to read (default: .env.docker)
-- `-o, --output-env <FILE>` - File .env to write (required with --write-env)
-- `-w, --write-env` - Enable writing of the .env file
-- `-u, --update-versions` - Enable updating component versions
-- `-r, --run` - Enable execution of Docker command
-- `[DOCKER_ARGS...]` - Additional arguments to pass to Docker command
+#### Filesystem Commands
+```lisp
+; Read file contents as string
+(rust-fs-read-to-string "config.txt")
 
-Examples:
-```bash
-# Generate .env.docker file and update versions
-dpm -i .env.dev -o .env.docker -w -u
+; Write string to file
+(rust-fs-write "output.txt" "Hello World")
 
-# Generate .env.docker file, update versions, and run Docker build
-dpm -i .env.dev -o .env.docker -w -u -r build test
+; Create directory
+(rust-fs-create-dir "new-folder")
 
-# Just run Docker command using existing .env.docker
-dpm -i .env.docker -r compose up -d
+; Check if path exists
+(rust-path-exists ".")
+
+; Copy file
+(rust-fs-copy "source.txt" "destination.txt")
 ```
 
-### 3. Automated Docker Environment Management
+#### Path Manipulation Commands
+```lisp
+; Join path components
+(rust-path-join "/home" "user" "documents")
 
-Upon running with the `-w` option, the utility automatically:
+; Get parent directory
+(rust-path-parent "/home/user/file.txt")
 
-- Scans directories inside `dev/docker`, calculates their MD5 checksums, and
-  injects them as environment variables.
-  Every directory is a docker image.
-- Merges `.env` and `.env.local` variables, providing flexibility and clear
-  priority handling.
-- Ensures necessary Docker socket mapping is correctly done depending on your
-  OS (Linux/macOS/Windows).
+; Get filename component
+(rust-path-filename "/home/user/file.txt")
 
-### 4. Version Management
+; Get file extension
+(rust-path-extension "document.pdf")
 
-When the `-u` option is used, the utility:
+; Check if path is directory
+(rust-path-is-dir "/home/user")
 
-- Compares the current MD5 checksums with previously stored values
-- If changes are detected, increments the PATCH version number
-- Stores the updated version information in the `dev/docker_versions` directory
-- Each component maintains its own version history
+; Check if path is file
+(rust-path-is-file "/home/user/file.txt")
+```
 
-### 5. Generated Docker Environment
+#### Process Execution Commands
+```lisp
+; Execute system command
+(rust-process-command "ls" "-la")
 
-When executed with the `-w` option, the utility generates a configuration file (specified by `-o`),
-used internally by Docker Compose:
+; Execute command and capture output
+(rust-process-output "echo" "Hello World")
+```
 
-Example `.env.docker`:
+### 4. Basic Lisp Operations
 
-```bash
-PROJECT_NAME=my-awesome-project
-HOST_PROJECT_PATH=/home/username/my-awesome-project
-MD5_MYCONFIGDIR=f3e45fe9
-HOST_UID=1000
-HOST_GID=1000
-DOCKER_HOST_MAP=/var/run/docker.sock:/var/run/docker.sock
+DPM supports standard Lisp operations for data manipulation:
+
+```lisp
+; Arithmetic operations
+(+ 1 2 3)          ; Addition: 6
+(* 4 5)            ; Multiplication: 20
+
+; String operations
+(concat "Hello" " " "World")  ; String concatenation
+
+; Print output
+(print "Debug message")
+
+; Variable operations (if supported)
+(debug "Debug info" variable-name)
 ```
 
 ---
 
-## ⚙️ Under the Hood (What Happens Specifically?)
+## 🔧 Building and Installation
 
-Here's the execution sequence for clarity:
+### Prerequisites
 
-1. **Environment File Processing**:
-   - Reads and merges variables from `.env` → `.env.local` → input file (specified by `-i`).
-   - Expands any environment variables in the values.
+- Rust 1.88.0 or later (specified in Cargo.toml)
+- Platform-specific build tools (automatically handled by build scripts)
 
-2. **MD5 Checksum Calculation**:
-   - Scans all directories under `dev/docker`.
-   - Calculates MD5 checksums for each directory by hashing all files.
-   - Creates environment variables in the format `MD5_DIRECTORYNAME=checksum`.
+### Cross-Platform Building
 
-3. **System Configuration Detection**:
-   - Detects the operating system and configures platform-specific settings.
-   - On Unix systems, fetches current UID/GID and username.
-   - Detects Docker socket location based on the platform.
+The project includes comprehensive build scripts for all major platforms:
 
-4. **Version Management** (when `-u` is specified):
-   - Compares current MD5 checksums with previously stored values.
-   - If changes are detected, increments the PATCH version number.
-   - Updates version files in the `dev/docker_versions` directory.
+#### Linux
+```bash
+chmod +x build-linux.sh
+./build-linux.sh
+```
+- Builds both musl (static) and system-specific binaries
+- Automatically detects Linux distribution
+- Creates binaries in `build/` directory with appropriate naming
 
-5. **Environment File Generation** (when `-w` is specified):
-   - Combines all variables from previous steps.
-   - Writes the complete environment to the output file (specified by `-o`).
+#### macOS
+```bash
+chmod +x build-macos.sh
+./build-macos.sh
+```
+- Builds for both Intel (x86_64) and ARM64 (Apple Silicon)
+- Creates universal binaries for macOS compatibility
 
-6. **Docker Command Execution** (when `-r` is specified):
-   - Sets up the Docker command with all environment variables.
-   - Configures Docker socket mapping based on the platform.
-   - Executes the specified Docker command with all arguments.
+#### Windows
+```cmd
+build-windows.bat
+```
+- Builds for Windows x86_64 with GNU toolchain
+- Handles Windows-specific binary naming (.exe)
+
+### Development Build
+```bash
+cargo build
+```
+
+### Running Tests
+```bash
+cargo test
+```
+
+---
+
+## ⚙️ Architecture Overview
+
+### Core Components
+
+1. **Lisp Interpreter** (`src/lisp_interpreter.rs`)
+   - Custom Lisp expression parser using `lexpr` crate
+   - Value system supporting Int, Str, List, and Nil types
+   - Command registry and execution context
+   - Variable storage and scope management
+
+2. **Command System** (`src/commands/`)
+   - Extensible command architecture with trait-based design
+   - Rust standard library integration commands
+   - Docker-specific operation commands
+   - Application and core system commands
+
+3. **Docker Integration** (`src/docker.rs`)
+   - Docker version management
+   - Environment variable handling
+   - Command execution with Docker context
+
+4. **Configuration Management** (`src/core.rs`)
+   - Project configuration handling
+   - Alternative traditional CLI interface
+   - Cross-platform compatibility layer
+
+### Key Dependencies
+
+- `lexpr` (0.2.7) - Lisp expression parsing
+- `walkdir` (2.5.0) - Directory traversal
+- `md-5` (0.10.6) - Hash generation for version management
+- `regex` (1.11.1) - Pattern matching
+- `dirs` (6.0.0) - Cross-platform directory operations
+- `emojis-rs` (0.1.3) - Enhanced output formatting
+- `uzers` (0.12.1) - Unix user operations (Unix only)
 
 ---
 
 ## 📖 Prerequisites
 
-- Docker & Docker Compose installed
+- Rust 1.88.0 or later for building from source
+- Docker & Docker Compose (optional, only needed for Docker-specific commands)
 
 ---
 
 ## 🌐 Supported Platforms
 
-- Linux
-- macOS
-- Windows
+- Linux (with musl and system-specific builds)
+- macOS (Intel x86_64 and ARM64 Apple Silicon)
+- Windows (x86_64 with GNU toolchain)
+
+---
+
+## 🔧 Development Guidelines
+
+### Code Style
+
+The project follows strict formatting guidelines:
+- **Line width**: 80 characters
+- **Indentation**: 2 spaces (no hard tabs)
+- **Style edition**: 2024
+- **Import organization**: Enabled
+
+Apply formatting:
+```bash
+cargo fmt
+```
+
+### Security and License Compliance
+
+The project uses `cargo-deny` for security and license compliance:
+```bash
+cargo deny check
+```
+
+### Commit Message Conventions
+
+This project enforces **Conventional Commits** specification for all commit messages to ensure consistent versioning and automated releases through semantic-release.
+
+#### Required Format
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+#### Valid Commit Types
+- `feat`: A new feature
+- `fix`: A bug fix
+- `docs`: Documentation only changes
+- `style`: Changes that do not affect the meaning of the code
+- `refactor`: A code change that neither fixes a bug nor adds a feature
+- `test`: Adding missing tests or correcting existing tests
+- `chore`: Changes to the build process or auxiliary tools
+- `perf`: A code change that improves performance
+- `ci`: Changes to CI configuration files and scripts
+- `build`: Changes that affect the build system or external dependencies
+- `revert`: Reverts a previous commit
+
+#### Examples
+```bash
+# Good commit messages
+git commit -m "feat: add Docker container management commands"
+git commit -m "fix: resolve path resolution issue on Windows"
+git commit -m "docs: update installation instructions"
+git commit -m "chore: update dependencies to latest versions"
+
+# Breaking changes
+git commit -m "feat!: remove deprecated CLI interface"
+git commit -m "fix: correct API endpoint URL
+
+BREAKING CHANGE: The API endpoint has changed from /v1 to /v2"
+```
+
+#### Local Validation
+You can validate commit messages locally using:
+```bash
+# Install dependencies
+npm install
+
+# Validate the last commit
+npm run commitlint-ci
+
+# Validate commit message from file
+npm run commitlint
+```
+
+#### Automated Validation
+All commits and pull requests are automatically validated by GitHub Actions. Non-compliant commit messages will block:
+- Direct pushes to main branch
+- Pull request merges
+- Release creation
+
+For more information, see the [Conventional Commits specification](https://www.conventionalcommits.org/).
+
+### Adding New Commands
+
+#### Struct-based Commands
+```rust
+pub struct YourCommand;
+
+impl Command for YourCommand {
+    fn execute(&self, args: Vec<Value>, ctx: &mut Context) -> Result<Value, String> {
+        // Implementation
+    }
+
+    fn name(&self) -> &'static str { "your-command" }
+    fn description(&self) -> &'static str { "Description" }
+}
+```
+
+#### Closure-based Commands
+Commands can also be registered using closures with `register_closure` or `register_closure_with_help_and_tag` for enhanced documentation.
 
 ---
 
@@ -192,6 +371,13 @@ Here's the execution sequence for clarity:
 
 Feel free to contribute or raise issues via our GitHub Repository.
 
+### Development Workflow
+1. Fork the repository
+2. Create a feature branch
+3. Follow the code style guidelines (`cargo fmt`)
+4. Add tests for new functionality (`cargo test`)
+5. Run security checks (`cargo clippy` and `cargo deny check`)
+6. Submit a pull request
 
 Use Conventional Commit Specification for your commits:
 [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)

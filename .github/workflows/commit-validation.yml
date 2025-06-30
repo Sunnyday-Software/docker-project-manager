@@ -1,0 +1,65 @@
+name: Commit Message Validation
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  validate-commits:
+    name: Validate Commit Messages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate commit messages (Push)
+        if: github.event_name == 'push'
+        run: |
+          # For push events, validate the current commit
+          echo "Validating commit: ${{ github.sha }}"
+          git log --format="%s" -n 1 ${{ github.sha }} | npx commitlint --verbose
+
+      - name: Validate commit messages (Pull Request)
+        if: github.event_name == 'pull_request'
+        run: |
+          # For pull requests, validate all commits in the PR
+          echo "Validating commits in PR from ${{ github.event.pull_request.base.sha }} to ${{ github.event.pull_request.head.sha }}"
+          npx commitlint --from=${{ github.event.pull_request.base.sha }} --to=${{ github.event.pull_request.head.sha }} --verbose
+
+      - name: Commit message format help
+        if: failure()
+        run: |
+          echo "❌ Commit message validation failed!"
+          echo ""
+          echo "📋 Your commit messages must follow the Conventional Commits specification:"
+          echo ""
+          echo "✅ Valid formats:"
+          echo "  feat: add new feature"
+          echo "  fix: resolve bug in authentication"
+          echo "  docs: update README with installation steps"
+          echo "  style: fix code formatting"
+          echo "  refactor: restructure user service"
+          echo "  test: add unit tests for parser"
+          echo "  chore: update dependencies"
+          echo "  perf: improve query performance"
+          echo "  ci: update GitHub Actions workflow"
+          echo "  build: update build configuration"
+          echo ""
+          echo "📝 Format: <type>[optional scope]: <description>"
+          echo ""
+          echo "🔗 More info: https://www.conventionalcommits.org/"
+          echo ""
+          echo "💡 Breaking changes should include 'BREAKING CHANGE:' in the footer or use '!' after type/scope"
+          echo "   Example: feat!: remove deprecated API endpoint"

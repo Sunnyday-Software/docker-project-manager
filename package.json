@@ -3,7 +3,13 @@
   "version": "1.0.0",
   "description": "Docker Project Manager - Rust CLI tool",
   "private": true,
+  "scripts": {
+    "commitlint": "commitlint --edit",
+    "commitlint-ci": "commitlint --from=HEAD~1 --to=HEAD --verbose"
+  },
   "devDependencies": {
+    "@commitlint/cli": "^18.0.0",
+    "@commitlint/config-conventional": "^18.0.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/exec": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
