@@ -20,7 +20,7 @@ jobs:
           - os: macos-latest
             build-script: ./build-macos.sh
           - os: windows-latest
-            build-script: build-windows.bat
+            build-script: .\build-windows.bat
 
     runs-on: ${{ matrix.os }}
 
