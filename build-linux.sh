@@ -25,6 +25,7 @@ fi
 
 # Ottieni la versione Rust richiesta dal Cargo.toml
 REQUIRED_RUST_VERSION=$(get_required_rust_version)
+echo "$REQUIRED_RUST_VERSION" > rust-toolchain
 
 # Installa o verifica Rust con la versione richiesta
 echo "Verifica e installazione di Rust..."
@@ -65,7 +66,7 @@ fi
 mkdir -p build
 
 echo "=== Pulizia e aggiornamento del progetto ==="
-#cargo clean
+cargo clean
 cargo update
 
 # Compilazione per Linux
