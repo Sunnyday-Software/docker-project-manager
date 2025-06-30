@@ -8,14 +8,49 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Funzione per estrarre la versione Rust richiesta dal Cargo.toml
+get_required_rust_version() {
+    if [ -f "Cargo.toml" ]; then
+        grep "^rust-version" Cargo.toml | sed 's/rust-version = "\(.*\)"/\1/' | tr -d '"'
+    else
+        echo ""
+    fi
+}
 
+# Aggiorna il PATH per includere Rust se è già installato ma non nel PATH
+if [ -f "$HOME/.cargo/env" ]; then
+    source "$HOME/.cargo/env"
+    echo "Ambiente Rust caricato."
+fi
 
-# Verifica se Rust è installato e lo installa se necessario
-if ! command_exists cargo || ! command_exists rustup; then
-    echo "Rust non è installato. Avvio dell'installazione..."
-    chmod +x install-rust-macos.sh
+# Ottieni la versione Rust richiesta dal Cargo.toml
+REQUIRED_RUST_VERSION=$(get_required_rust_version)
+
+# Installa o verifica Rust con la versione richiesta
+echo "Verifica e installazione di Rust..."
+chmod +x install-rust-macos.sh
+if [ -n "$REQUIRED_RUST_VERSION" ]; then
+    echo "Versione Rust richiesta: $REQUIRED_RUST_VERSION"
+    ./install-rust-macos.sh "$REQUIRED_RUST_VERSION"
+else
+    echo "Nessuna versione specifica richiesta, uso la versione più recente"
     ./install-rust-macos.sh
 fi
+
+# Aggiorna il PATH per la sessione corrente
+if [ -f "$HOME/.cargo/env" ]; then
+    source "$HOME/.cargo/env"
+    echo "Ambiente Rust caricato."
+fi
+
+# Verifica che cargo e rustup siano disponibili
+if ! command_exists cargo || ! command_exists rustup; then
+    echo "Errore: Impossibile trovare cargo o rustup nel PATH."
+    echo "Prova ad aprire un nuovo terminale o eseguire manualmente: source $HOME/.cargo/env"
+    exit 1
+fi
+
+echo "✓ Rust configurato correttamente"
 
 # Estrae il nome del pacchetto dal Cargo.toml
 PACKAGE_NAME=$(cargo metadata --format-version 1 --no-deps | sed -n 's/.*"name":"\([^"]*\)".*/\1/p' | head -n 1)
