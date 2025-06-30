@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Make build scripts executable (Unix)
         if: runner.os != 'Windows'
-        run: chmod +x ./build-linux.sh ./build-macos.sh
+        run: chmod +x ${{ matrix.build-script }}
       - name: Build with OS-specific script
         run: ${{ matrix.build-script }}
       - name: Run tests
