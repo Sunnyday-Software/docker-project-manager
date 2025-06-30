@@ -1,6 +1,6 @@
+use crate::commands::core::read_env::interpolate_variables;
 use crate::utils::debug_log;
 use crate::{CommandRegistry, Value, tags};
-use crate::commands::core::read_env::interpolate_variables;
 
 /// Register get-var command
 pub fn register_get_var_command(registry: &mut CommandRegistry) {
@@ -128,8 +128,8 @@ pub fn register_var_commands(registry: &mut CommandRegistry) {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::lisp_interpreter::CommandRegistry;
   use crate::context::Context;
+  use crate::lisp_interpreter::CommandRegistry;
 
   // Tests for get-var command
   #[test]
@@ -274,7 +274,7 @@ mod tests {
     // Check that the variable was actually set in the context
     assert_eq!(
       ctx.get_variable("test_key"),
-      Some(&Value::Str("test_value".to_string()))
+      Some(Value::Str("test_value".to_string()))
     );
   }
 
@@ -332,10 +332,20 @@ mod tests {
       Value::Str("test_key".to_string()),
       Value::Str("test_value".to_string()),
     ];
-    ctx.registry.get("set-var").unwrap().execute(set_args, &mut ctx).unwrap();
+    ctx
+      .registry
+      .get("set-var")
+      .unwrap()
+      .execute(set_args, &mut ctx)
+      .unwrap();
 
     let get_args = vec![Value::Str("test_key".to_string())];
-    let result = ctx.registry.get("get-var").unwrap().execute(get_args, &mut ctx).unwrap();
+    let result = ctx
+      .registry
+      .get("get-var")
+      .unwrap()
+      .execute(get_args, &mut ctx)
+      .unwrap();
 
     assert_eq!(result, Value::Str("test_value".to_string()));
   }
