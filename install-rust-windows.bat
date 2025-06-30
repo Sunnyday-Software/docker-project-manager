@@ -24,7 +24,7 @@ if %ERRORLEVEL% equ 0 (
 
     REM Esegui il programma di installazione con opzioni predefinite
     echo Esecuzione del programma di installazione di Rust...
-    rustup-init.exe -y --default-toolchain stable --profile minimal
+    rustup-init.exe -y --default-toolchain stable
 
     REM Elimina il programma di installazione
     del rustup-init.exe

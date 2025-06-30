@@ -54,20 +54,6 @@ cargo update
 
 REM Compilazione per Windows
 echo === Compilazione per Windows (x86_64) ===
-rustup target add x86_64-pc-windows-gnu
-cargo build --release --target x86_64-pc-windows-gnu
-
-REM Verifica se il binario Windows esiste
-set WINDOWS_BINARY_PATH=target\x86_64-pc-windows-gnu\release\%PACKAGE_NAME%.exe
-if exist "%WINDOWS_BINARY_PATH%" (
-    echo Binario Windows compilato con successo: %WINDOWS_BINARY_PATH%
-    copy "%WINDOWS_BINARY_PATH%" "build\%PACKAGE_NAME%-windows-x86_64.exe"
-) else (
-    echo Errore: il binario Windows non è stato trovato in %WINDOWS_BINARY_PATH%
-)
-
-REM Compilazione standard per il sistema corrente
-echo === Compilazione standard per il sistema corrente ===
 cargo build --release
 
 REM Percorso del binario compilato per il sistema corrente
