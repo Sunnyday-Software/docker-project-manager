@@ -57,7 +57,7 @@ echo === Compilazione per Windows (x86_64) ===
 cargo build --release
 
 REM Percorso del binario compilato per il sistema corrente
-set BINARY_PATH=target\release\%PACKAGE_NAME%.exe
+set BINARY_PATH=.\target\release\%PACKAGE_NAME%.exe
 
 REM Verifica se il binario esiste
 if not exist "%BINARY_PATH%" (
