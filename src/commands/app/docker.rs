@@ -1,3 +1,4 @@
+use crate::file_ops::read_env_file;
 use crate::model::*;
 use crate::utils::debug_log;
 use crate::utils::{get_home_directory, socket_exists};
@@ -27,23 +28,23 @@ pub fn register_docker_command(registry: &mut CommandRegistry) {
         }
       }
 
-      //debug_log(ctx, "docker", &format!("docker args: {:?}", docker_args));
+      debug_log(ctx, "docker", &format!("docker args: {:?}", docker_args));
 
       // Get environment variables from context
-      let env_vars = HashMap::new();
+      let mut env_vars = HashMap::new();
 
       // Collect all string variables from context as environment variables
-      /*for (key, value) in &ctx.variables {
+      for (key, value) in &ctx.variables {
         if let Value::Str(val) = value {
           env_vars.insert(key.clone(), val.clone());
         }
-      }*/
+      }
 
       //debug_log(ctx, "docker", &format!("collected {} environment variables", env_vars.len()));
 
       // Read existing environment variables from .env files if they exist
-      let existing_env_vars = HashMap::new();
-      /*let basedir = ctx.get_basedir();
+      let mut existing_env_vars = HashMap::new();
+      let basedir = ctx.get_basedir();
       let env_file_path = basedir.join(".env");
 
       if env_file_path.exists() {
@@ -56,10 +57,10 @@ pub fn register_docker_command(registry: &mut CommandRegistry) {
             debug_log(ctx, "docker", &format!("warning: failed to read .env file: {}", e));
           }
         }
-      }*/
+      }
 
       // Execute the docker command
-      match execute_docker_command_internal(ctx, &env_vars, &existing_env_vars, &docker_args, ctx.get_debug_print()) {
+      match execute_docker_command_internal(ctx,&env_vars,&existing_env_vars, &docker_args, ctx.get_debug_print()) {
         Ok(_) => {
           debug_log(ctx, "docker", "docker command executed successfully");
           Ok(Value::Str("Docker command executed successfully".to_string()))
@@ -152,10 +153,10 @@ fn execute_docker_command_internal(
   }
 
   // Creazione della stringa concatenata di tutte le chiavi
-  //let concatenated_keys =
-  //env_vars.keys().cloned().collect::<Vec<_>>().join(";");
-  // command.env(ENV_DOCKER_ENV_KEYS, concatenated_keys);
-  //command.args(&["-e", ENV_DOCKER_ENV_KEYS]);
+  let concatenated_keys =
+    env_vars.keys().cloned().collect::<Vec<_>>().join(";");
+  command.env(ENV_DOCKER_ENV_KEYS, concatenated_keys);
+  command.args(&["-e", ENV_DOCKER_ENV_KEYS]);
 
   // Specifica il servizio e il comando da eseguire
   command.args(DOCKER_MAKE_ARGS);

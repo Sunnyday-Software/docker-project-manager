@@ -19,7 +19,7 @@ pub const DOCKER_SOCKET_SUFFIX: &str = "/docker.sock";
 
 /// Docker command arguments
 pub const DOCKER_COMPOSE_ARGS: &[&str] =
-  &["compose", "run", "--rm", "--no-deps"];
+  &["compose", "run", "--rm", "--no-deps", "-T"];
 pub const DOCKER_MAKE_ARGS: &[&str] = &["make", "make"];
 
 /// Environment variable names
