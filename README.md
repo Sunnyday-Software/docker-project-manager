@@ -3,7 +3,9 @@
 [![Rust](https://img.shields.io/badge/Built%20with-Rust-orange?logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![Docker](https://img.shields.io/badge/Compatible%20with-Docker-blue?logo=docker&logoColor=white)](https://www.docker.com/)
 
-A Docker Project Manager written in Rust that provides a **Lisp-based command interface** for managing Docker environments and project configurations. The project uses a custom Lisp interpreter to execute commands and manage Docker project workflows.
+A Docker Project Manager written in Rust that provides a **Lisp-based command interface** for managing Docker
+environments and project configurations. The project uses a custom Lisp interpreter to execute commands and manage
+Docker project workflows.
 
 ---
 
@@ -29,40 +31,12 @@ A Docker Project Manager written in Rust that provides a **Lisp-based command in
 
 ---
 
-## 📦 Project Structure
-
-```sh
-docker-project-manager/
-├── src/
-│   ├── main.rs                    # Entry point and command registration
-│   ├── lisp_interpreter.rs        # Core Lisp interpreter functionality
-│   ├── commands/                  # Command implementations
-│   │   ├── rust/                  # Rust standard library commands
-│   │   │   ├── env.rs            # Environment variable commands
-│   │   │   ├── fs.rs             # Filesystem operation commands
-│   │   │   ├── path.rs           # Path manipulation commands
-│   │   │   └── process.rs        # Process execution commands
-│   │   ├── app/                  # Application-specific commands
-│   │   └── core/                 # Core system commands
-│   ├── docker.rs                 # Docker-specific operations
-│   ├── core.rs                   # Configuration and alternative CLI
-│   └── utils.rs                  # Utility functions
-├── build-linux.sh                # Linux build script
-├── build-macos.sh                # macOS build script
-├── build-windows.bat             # Windows build script
-├── Cargo.toml                    # Rust project configuration
-├── rustfmt.toml                  # Code formatting configuration
-├── deny.toml                     # Security and license compliance
-└── dpm                           # Docker Project Manager executable
-```
-
----
-
 ## 🛠️ Usage Instructions
 
 ### 1. Lisp Command Interface
 
-DPM provides a powerful Lisp-based command interface using S-expression syntax. Commands are executed using parentheses notation:
+DPM provides a powerful Lisp-based command interface using S-expression syntax. Commands are executed using parentheses
+notation:
 
 ```lisp
 (command-name arg1 arg2 ...)
@@ -79,6 +53,7 @@ Start the DPM interpreter and execute Lisp commands:
 ### 3. Available Command Categories
 
 #### Environment Commands
+
 ```lisp
 ; Get current working directory
 (rust-env-current-dir)
@@ -94,6 +69,7 @@ Start the DPM interpreter and execute Lisp commands:
 ```
 
 #### Filesystem Commands
+
 ```lisp
 ; Read file contents as string
 (rust-fs-read-to-string "config.txt")
@@ -112,6 +88,7 @@ Start the DPM interpreter and execute Lisp commands:
 ```
 
 #### Path Manipulation Commands
+
 ```lisp
 ; Join path components
 (rust-path-join "/home" "user" "documents")
@@ -133,6 +110,7 @@ Start the DPM interpreter and execute Lisp commands:
 ```
 
 #### Process Execution Commands
+
 ```lisp
 ; Execute system command
 (rust-process-command "ls" "-la")
@@ -174,35 +152,43 @@ DPM supports standard Lisp operations for data manipulation:
 The project includes comprehensive build scripts for all major platforms:
 
 #### Linux
+
 ```bash
 chmod +x build-linux.sh
 ./build-linux.sh
 ```
+
 - Builds both musl (static) and system-specific binaries
 - Automatically detects Linux distribution
 - Creates binaries in `build/` directory with appropriate naming
 
 #### macOS
+
 ```bash
 chmod +x build-macos.sh
 ./build-macos.sh
 ```
+
 - Builds for both Intel (x86_64) and ARM64 (Apple Silicon)
 - Creates universal binaries for macOS compatibility
 
 #### Windows
+
 ```cmd
 build-windows.bat
 ```
+
 - Builds for Windows x86_64 with GNU toolchain
 - Handles Windows-specific binary naming (.exe)
 
 ### Development Build
+
 ```bash
 cargo build
 ```
 
 ### Running Tests
+
 ```bash
 cargo test
 ```
@@ -214,26 +200,26 @@ cargo test
 ### Core Components
 
 1. **Lisp Interpreter** (`src/lisp_interpreter.rs`)
-   - Custom Lisp expression parser using `lexpr` crate
-   - Value system supporting Int, Str, List, and Nil types
-   - Command registry and execution context
-   - Variable storage and scope management
+    - Custom Lisp expression parser using `lexpr` crate
+    - Value system supporting Int, Str, List, and Nil types
+    - Command registry and execution context
+    - Variable storage and scope management
 
 2. **Command System** (`src/commands/`)
-   - Extensible command architecture with trait-based design
-   - Rust standard library integration commands
-   - Docker-specific operation commands
-   - Application and core system commands
+    - Extensible command architecture with trait-based design
+    - Rust standard library integration commands
+    - Docker-specific operation commands
+    - Application and core system commands
 
 3. **Docker Integration** (`src/docker.rs`)
-   - Docker version management
-   - Environment variable handling
-   - Command execution with Docker context
+    - Docker version management
+    - Environment variable handling
+    - Command execution with Docker context
 
 4. **Configuration Management** (`src/core.rs`)
-   - Project configuration handling
-   - Alternative traditional CLI interface
-   - Cross-platform compatibility layer
+    - Project configuration handling
+    - Alternative traditional CLI interface
+    - Cross-platform compatibility layer
 
 ### Key Dependencies
 
@@ -267,12 +253,14 @@ cargo test
 ### Code Style
 
 The project follows strict formatting guidelines:
+
 - **Line width**: 80 characters
 - **Indentation**: 2 spaces (no hard tabs)
 - **Style edition**: 2024
 - **Import organization**: Enabled
 
 Apply formatting:
+
 ```bash
 cargo fmt
 ```
@@ -280,15 +268,18 @@ cargo fmt
 ### Security and License Compliance
 
 The project uses `cargo-deny` for security and license compliance:
+
 ```bash
 cargo deny check
 ```
 
 ### Commit Message Conventions
 
-This project enforces **Conventional Commits** specification for all commit messages to ensure consistent versioning and automated releases through semantic-release.
+This project enforces **Conventional Commits** specification for all commit messages to ensure consistent versioning and
+automated releases through semantic-release.
 
 #### Required Format
+
 ```
 <type>[optional scope]: <description>
 
@@ -298,6 +289,7 @@ This project enforces **Conventional Commits** specification for all commit mess
 ```
 
 #### Valid Commit Types
+
 - `feat`: A new feature
 - `fix`: A bug fix
 - `docs`: Documentation only changes
@@ -311,6 +303,7 @@ This project enforces **Conventional Commits** specification for all commit mess
 - `revert`: Reverts a previous commit
 
 #### Examples
+
 ```bash
 # Good commit messages
 git commit -m "feat: add Docker container management commands"
@@ -326,7 +319,9 @@ BREAKING CHANGE: The API endpoint has changed from /v1 to /v2"
 ```
 
 #### Local Validation
+
 You can validate commit messages locally using:
+
 ```bash
 # Install dependencies
 npm install
@@ -339,7 +334,9 @@ npm run commitlint
 ```
 
 #### Automated Validation
+
 All commits and pull requests are automatically validated by GitHub Actions. Non-compliant commit messages will block:
+
 - Direct pushes to main branch
 - Pull request merges
 - Release creation
@@ -349,6 +346,7 @@ For more information, see the [Conventional Commits specification](https://www.c
 ### Adding New Commands
 
 #### Struct-based Commands
+
 ```rust
 pub struct YourCommand;
 
@@ -363,7 +361,9 @@ impl Command for YourCommand {
 ```
 
 #### Closure-based Commands
-Commands can also be registered using closures with `register_closure` or `register_closure_with_help_and_tag` for enhanced documentation.
+
+Commands can also be registered using closures with `register_closure` or `register_closure_with_help_and_tag` for
+enhanced documentation.
 
 ---
 
@@ -372,6 +372,7 @@ Commands can also be registered using closures with `register_closure` or `regis
 Feel free to contribute or raise issues via our GitHub Repository.
 
 ### Development Workflow
+
 1. Fork the repository
 2. Create a feature branch
 3. Follow the code style guidelines (`cargo fmt`)
