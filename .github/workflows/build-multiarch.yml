@@ -1,0 +1,81 @@
+name: Build Test (PR)
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-amd64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make build scripts executable (Unix)
+        run: chmod +x ./build-linux.sh
+      - name: Build
+        run: ./build-linux.sh
+      - name: Run tests
+        run: cargo test --verbose
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-amd64-binaries
+          path: build/
+
+  build-arm64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - name: Build & test ARM64 (via Docker + QEMU)
+        run: |
+          # Costruisci un'immagine ARM64 che abbia tutto il necessario per buildare e testare
+          docker buildx build --platform linux/arm64 \
+            -t myarmbuild:latest \
+            -f Dockerfile.ci.arm64 . \
+            --load
+
+          # Esegui la build ARM64 in container (se vuoi passare script, monta volume, ecc.)
+          docker run --rm --platform linux/arm64 \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            myarmbuild:latest \
+            bash -c "./build-linux-arm.sh"
+      - name: Upload build artifacts (ARM64)
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm64-binaries
+          path: build/
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make build scripts executable (Unix)
+        run: chmod +x ./build-macos.sh
+      - name: Build
+        run: ./build-macos.sh
+      - name: Run tests
+        run: cargo test --verbose
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-binaries
+          path: build/
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: .\build-windows.bat
+      - name: Run tests
+        run: cargo test --verbose
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-binaries
+          path: build/
