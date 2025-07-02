@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.0.2...v1.1.0) (2025-07-02)
+
+
+### Features
+
+* **ci:** add multi-architecture build and test workflows ([6b5ba7b](https://github.com/Sunnyday-Software/docker-project-manager/commit/6b5ba7b3f6d55b4520f4ea697118979023f3fff6))
+
 ## [1.0.2](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.0.1...v1.0.2) (2025-07-02)
 
 
