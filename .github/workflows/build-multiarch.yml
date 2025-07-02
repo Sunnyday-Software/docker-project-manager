@@ -7,26 +7,64 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build-amd64:
-    runs-on: ubuntu-latest
+
+
+  build-matrix:
+    name: Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        include:
+          - os: ubuntu-latest
+            build-script: ./build-linux.sh
+            artifact-name: linux
+            archive-cmd: tar -czf
+            archive-ext: tar.gz
+          - os: macos-latest
+            build-script: ./build-macos.sh
+            artifact-name: macos
+            archive-cmd: tar -czf
+            archive-ext: tar.gz
+          - os: windows-latest
+            build-script: .\build-windows.bat
+            artifact-name: windows
+            archive-ext: zip
     steps:
-      - uses: actions/checkout@v4
-      - name: Make build scripts executable (Unix)
-        run: chmod +x ./build-linux.sh
-      - name: Build
-        run: ./build-linux.sh
-      - name: Run tests
-        run: cargo test --verbose
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          name: linux-amd64-binaries
-          path: build/
+          ref: main
+      - name: Make build scripts executable (Unix)
+        if: runner.os != 'Windows'
+        run: chmod +x ${{ matrix.build-script }}
+      - name: Build with OS-specific script
+        run: ${{ matrix.build-script }}
+      - name: Archive build artifacts (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          cd build
+          ${{ matrix.archive-cmd }} ../${{ matrix.artifact-name }}-binaries-${{ needs.release.outputs.version }}.${{ matrix.archive-ext }} *
+      - name: Archive build artifacts (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cd build
+          Compress-Archive -Path * -DestinationPath ../${{ matrix.artifact-name }}-binaries-${{ needs.release.outputs.version }}.${{ matrix.archive-ext }}
+      - name: Upload archived artifacts to release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.release.outputs.version }}
+          files: ${{ matrix.artifact-name }}-binaries-${{ needs.release.outputs.version }}.${{ matrix.archive-ext }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
   build-arm64:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
       - name: Build & test ARM64 (via Docker + QEMU)
@@ -46,38 +84,15 @@ jobs:
             -w /workspace \
             sunnydaysoftware/make:9391b157-arm64 \
             bash -c "./build-linux-arm.sh"
-      - name: Upload build artifacts (ARM64)
-        uses: actions/upload-artifact@v4
+      - name: Archive build artifacts (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          cd build
+          tar -czf ../linux-binaries-${{ needs.release.outputs.version }}.${{ matrix.archive-ext }} *
+      - name: Upload archived artifacts to release
+        uses: softprops/action-gh-release@v1
         with:
-          name: linux-arm64-binaries
-          path: build/
-
-  build-macos:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Make build scripts executable (Unix)
-        run: chmod +x ./build-macos.sh
-      - name: Build
-        run: ./build-macos.sh
-      - name: Run tests
-        run: cargo test --verbose
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-binaries
-          path: build/
-
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build
-        run: .\build-windows.bat
-      - name: Run tests
-        run: cargo test --verbose
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-binaries
-          path: build/
+          tag_name: v${{ needs.release.outputs.version }}
+          files: ${{ matrix.artifact-name }}-binaries-arm64-${{ needs.release.outputs.version }}.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

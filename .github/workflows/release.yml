@@ -44,4 +44,3 @@ jobs:
             echo "released=false" >> $GITHUB_OUTPUT
             echo "No release created"
           fi
-
