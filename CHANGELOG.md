@@ -1,3 +1,10 @@
+## [1.1.4](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.1.3...v1.1.4) (2025-07-02)
+
+
+### Bug Fixes
+
+* **ci:** consolidate OS-specific workflows into a single matrix-based multi-arch workflow ([e27ddd0](https://github.com/Sunnyday-Software/docker-project-manager/commit/e27ddd02469e90872dedb8226e8a1c6809fad0a2))
+
 ## [1.1.3](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.1.2...v1.1.3) (2025-07-02)
 
 
