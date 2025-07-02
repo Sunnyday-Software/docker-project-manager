@@ -15,6 +15,18 @@ jobs:
   release:
     uses: ./.github/workflows/release.yml
 
+  # 👈 Job di debug per vedere gli output
+  debug-release:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug Release Outputs
+        run: |
+          echo "Released: '${{ needs.release.outputs.released }}'"
+          echo "Version: '${{ needs.release.outputs.version }}'"
+          echo "Released type: ${{ type(needs.release.outputs.released) }}"
+
+
   build:
     needs: release
     if: needs.release.outputs.released == 'true'
