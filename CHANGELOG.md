@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.1.0...v1.1.1) (2025-07-02)
+
+
+### Bug Fixes
+
+* **ci:** replace OS matrix build with multi-arch workflows triggered on dependent workflow completion ([b8abcd3](https://github.com/Sunnyday-Software/docker-project-manager/commit/b8abcd35456510027504a393697530b056b88c39))
+
 # [1.1.0](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.0.2...v1.1.0) (2025-07-02)
 
 
