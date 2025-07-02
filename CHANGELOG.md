@@ -1,3 +1,10 @@
+## [1.1.5](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.1.4...v1.1.5) (2025-07-02)
+
+
+### Bug Fixes
+
+* **ci:** pass inputs to `build-multiarch` workflow and update artifact naming ([e5d8ad7](https://github.com/Sunnyday-Software/docker-project-manager/commit/e5d8ad7e4f325f1039d00b8367e758d199d24bdb))
+
 ## [1.1.4](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.1.3...v1.1.4) (2025-07-02)
 
 
