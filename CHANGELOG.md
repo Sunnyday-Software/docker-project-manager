@@ -1,3 +1,10 @@
+## [1.1.7](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.1.6...v1.1.7) (2025-07-02)
+
+
+### Bug Fixes
+
+* **ci:** test ci ([24c5b69](https://github.com/Sunnyday-Software/docker-project-manager/commit/24c5b6914c168432e1862f9f64ba659492751543))
+
 ## [1.1.6](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.1.5...v1.1.6) (2025-07-02)
 
 
