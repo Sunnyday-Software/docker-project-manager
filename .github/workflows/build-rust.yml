@@ -12,10 +12,12 @@ jobs:
     strategy:
       max-parallel: 1
       matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        os: [ ubuntu-latest, ubuntu-24.04-arm, macos-latest, windows-latest ]
         include:
           - os: ubuntu-latest
             build-script: ./build-linux.sh
+          - os: ubuntu-24.04-arm
+            build-script: ./build-linux-arm.sh
           - os: macos-latest
             build-script: ./build-macos.sh
           - os: windows-latest
