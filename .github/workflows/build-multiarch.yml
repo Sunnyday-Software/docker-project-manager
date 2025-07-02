@@ -92,14 +92,13 @@ jobs:
             sunnydaysoftware/make:9391b157-arm64 \
             bash -c "./build-linux-arm.sh"
       - name: Archive build artifacts (Unix)
-        if: runner.os != 'Windows'
         run: |
           cd build
-          tar -czf ../linux-binaries-${{ inputs.version }}.${{ matrix.archive-ext }} *
+          tar -czf ../linux-binaries-arm64-${{ inputs.version }}.tar.gz *
       - name: Upload archived artifacts to release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ inputs.version }}
-          files: ${{ matrix.artifact-name }}-binaries-arm64-${{ inputs.version }}.tar.gz
+          files: linux-binaries-arm64-${{ inputs.version }}.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
