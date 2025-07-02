@@ -2,6 +2,13 @@ name: Build
 
 on:
   workflow_call:
+    inputs:  # 👈 Definisci gli input che ricevi
+      version:
+        required: true
+        type: string
+      released:
+        required: true
+        type: string
 
 env:
   CARGO_TERM_COLOR: always
@@ -44,17 +51,17 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           cd build
-          ${{ matrix.archive-cmd }} ../${{ matrix.artifact-name }}-binaries-${{ needs.release.outputs.version }}.${{ matrix.archive-ext }} *
+          ${{ matrix.archive-cmd }} ../${{ matrix.artifact-name }}-binaries-${{ inputs.version }}.${{ matrix.archive-ext }} *
       - name: Archive build artifacts (Windows)
         if: runner.os == 'Windows'
         run: |
           cd build
-          Compress-Archive -Path * -DestinationPath ../${{ matrix.artifact-name }}-binaries-${{ needs.release.outputs.version }}.${{ matrix.archive-ext }}
+          Compress-Archive -Path * -DestinationPath ../${{ matrix.artifact-name }}-binaries-${{ inputs.version }}.${{ matrix.archive-ext }}
       - name: Upload archived artifacts to release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ needs.release.outputs.version }}
-          files: ${{ matrix.artifact-name }}-binaries-${{ needs.release.outputs.version }}.${{ matrix.archive-ext }}
+          tag_name: v${{ inputs.version }}
+          files: ${{ matrix.artifact-name }}-binaries-${{ inputs.version }}.${{ matrix.archive-ext }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -88,11 +95,11 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           cd build
-          tar -czf ../linux-binaries-${{ needs.release.outputs.version }}.${{ matrix.archive-ext }} *
+          tar -czf ../linux-binaries-${{ inputs.version }}.${{ matrix.archive-ext }} *
       - name: Upload archived artifacts to release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ needs.release.outputs.version }}
-          files: ${{ matrix.artifact-name }}-binaries-arm64-${{ needs.release.outputs.version }}.tar.gz
+          tag_name: v${{ inputs.version }}
+          files: ${{ matrix.artifact-name }}-binaries-arm64-${{ inputs.version }}.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

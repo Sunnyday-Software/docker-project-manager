@@ -16,4 +16,9 @@ jobs:
     uses: ./.github/workflows/release.yml
 
   build:
+    needs: release
+    if: needs.release.outputs.released == 'true'
     uses: ./.github/workflows/build-multiarch.yml
+    with: # 👈 Passa i parametri al workflow chiamato
+      version: ${{ needs.release.outputs.version }}
+      released: ${{ needs.release.outputs.released }}
