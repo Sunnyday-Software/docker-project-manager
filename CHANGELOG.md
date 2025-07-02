@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.1.1...v1.1.2) (2025-07-02)
+
+
+### Bug Fixes
+
+* **ci:** replace custom ARM64 image with prebuilt sunnydaysoftware image for faster builds ([07e51dd](https://github.com/Sunnyday-Software/docker-project-manager/commit/07e51dd2f6d20fef0b5c649fc01a3af435c425dc))
+
 ## [1.1.1](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.1.0...v1.1.1) (2025-07-02)
 
 
