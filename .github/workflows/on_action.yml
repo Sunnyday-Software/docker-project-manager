@@ -24,8 +24,11 @@ jobs:
         run: |
           echo "Released: '${{ needs.release.outputs.released }}'"
           echo "Version: '${{ needs.release.outputs.version }}'"
-          echo "Released type: ${{ type(needs.release.outputs.released) }}"
-
+          echo "Released length: ${#RELEASED}"
+          echo "Released equals 'true': ${{ needs.release.outputs.released == 'true' }}"
+          echo "Released equals true: ${{ needs.release.outputs.released == true }}"
+        env:
+          RELEASED: ${{ needs.release.outputs.released }}
 
   build:
     needs: release

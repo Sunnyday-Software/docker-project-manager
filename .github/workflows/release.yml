@@ -2,6 +2,13 @@ name: Release
 
 on:
   workflow_call:
+    outputs:  # 👈 IMPORTANTE: Aggiungi questo!
+      released:
+        description: "Whether a release was created"
+        value: ${{ jobs.release.outputs.released }}
+      version:
+        description: "Version that was released"
+        value: ${{ jobs.release.outputs.version }}
 
 env:
   CARGO_TERM_COLOR: always
