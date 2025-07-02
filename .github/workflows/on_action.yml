@@ -1,0 +1,19 @@
+name: on_action.yml
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  check-commit:
+    uses: ./.github/workflows/commit-validation.yml
+
+  security-audit:
+    uses: ./.github/workflows/security-audit.yml
+
+  release:
+    uses: ./.github/workflows/release.yml
+
+  build:
+    uses: ./.github/workflows/build-multiarch.yml

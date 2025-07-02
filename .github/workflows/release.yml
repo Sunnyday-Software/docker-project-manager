@@ -1,34 +1,13 @@
-name: CI/CD Pipeline
+name: Release
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_call:
+
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - name: Run tests
-        run: cargo test --verbose
-      - name: Run security audit
-        uses: EmbarkStudios/cargo-deny-action@v2.0.11
-        with:
-          command: check advisories bans licenses sources
-        continue-on-error: true
-
   release:
     name: Release
     runs-on: ubuntu-latest
@@ -69,53 +48,3 @@ jobs:
             echo "No release created"
           fi
 
-  build:
-    name: Build
-    runs-on: ${{ matrix.os }}
-    needs: release
-    if: needs.release.outputs.released == 'true'
-    strategy:
-      matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
-        include:
-          - os: ubuntu-latest
-            build-script: ./build-linux.sh
-            artifact-name: linux
-            archive-cmd: tar -czf
-            archive-ext: tar.gz
-          - os: macos-latest
-            build-script: ./build-macos.sh
-            artifact-name: macos
-            archive-cmd: tar -czf
-            archive-ext: tar.gz
-          - os: windows-latest
-            build-script: .\build-windows.bat
-            artifact-name: windows
-            archive-ext: zip
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: main
-      - name: Make build scripts executable (Unix)
-        if: runner.os != 'Windows'
-        run: chmod +x ${{ matrix.build-script }}
-      - name: Build with OS-specific script
-        run: ${{ matrix.build-script }}
-      - name: Archive build artifacts (Unix)
-        if: runner.os != 'Windows'
-        run: |
-          cd build
-          ${{ matrix.archive-cmd }} ../${{ matrix.artifact-name }}-binaries-${{ needs.release.outputs.version }}.${{ matrix.archive-ext }} *
-      - name: Archive build artifacts (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          cd build
-          Compress-Archive -Path * -DestinationPath ../${{ matrix.artifact-name }}-binaries-${{ needs.release.outputs.version }}.${{ matrix.archive-ext }}
-      - name: Upload archived artifacts to release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ needs.release.outputs.version }}
-          files: ${{ matrix.artifact-name }}-binaries-${{ needs.release.outputs.version }}.${{ matrix.archive-ext }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,11 +1,7 @@
-name: Build Test (PR)
+name: Build
 
 on:
-  workflow_run:
-    workflows: ["Commit Message Validation"]
-    types:
-      - completed
-    branches: [ "main" ]
+  workflow_call:
 
 env:
   CARGO_TERM_COLOR: always
@@ -13,7 +9,6 @@ env:
 jobs:
   build-amd64:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
       - name: Make build scripts executable (Unix)
@@ -30,7 +25,6 @@ jobs:
 
   build-arm64:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
@@ -60,7 +54,6 @@ jobs:
 
   build-macos:
     runs-on: macos-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
       - name: Make build scripts executable (Unix)
@@ -77,7 +70,6 @@ jobs:
 
   build-windows:
     runs-on: windows-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
       - name: Build

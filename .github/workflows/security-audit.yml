@@ -1,17 +1,7 @@
 name: Security Audit
 on:
-  pull_request:
-    branches: [ "main" ]
-    paths:
-      - "**/Cargo.toml"
-      - "**/Cargo.lock"
-  push:
-    branches: [ "main" ]
-    paths:
-      - "**/Cargo.toml"
-      - "**/Cargo.lock"
-  schedule:
-    - cron: '0 0 * * 0' # Weekly on Sunday
+  workflow_call:
+
 jobs:
   security_audit:
     runs-on: ubuntu-latest
