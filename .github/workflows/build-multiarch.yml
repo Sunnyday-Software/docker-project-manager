@@ -38,16 +38,19 @@ jobs:
       - name: Build & test ARM64 (via Docker + QEMU)
         run: |
           # Costruisci un'immagine ARM64 che abbia tutto il necessario per buildare e testare
-          docker buildx build --platform linux/arm64 \
-            -t myarmbuild:latest \
-            -f Dockerfile.ci.arm64 . \
-            --load
+          # docker buildx build --platform linux/arm64 \
+          #  -t myarmbuild:latest \
+          #  -f Dockerfile.ci.arm64 . \
+          #  --load
+          
+          # Utilizzo questa immagine per accelerare i tempi
+          # sunnydaysoftware/make:9391b157-arm64
 
           # Esegui la build ARM64 in container (se vuoi passare script, monta volume, ecc.)
           docker run --rm --platform linux/arm64 \
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
-            myarmbuild:latest \
+            sunnydaysoftware/make:9391b157-arm64 \
             bash -c "./build-linux-arm.sh"
       - name: Upload build artifacts (ARM64)
         uses: actions/upload-artifact@v4
