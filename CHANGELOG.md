@@ -1,3 +1,11 @@
+## [1.1.3](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.1.2...v1.1.3) (2025-07-02)
+
+
+### Bug Fixes
+
+* **ci:** remove unnecessary conditions and dependencies in release workflow ([0939c4e](https://github.com/Sunnyday-Software/docker-project-manager/commit/0939c4ec64d36bad356b0840328cba33c983371e))
+* **ci:** simplify workflows with `workflow_call` trigger and consolidate actions ([1b3dc1c](https://github.com/Sunnyday-Software/docker-project-manager/commit/1b3dc1c51a3b8b00b8a2dd202c2552e1ab87fcb2))
+
 ## [1.1.2](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.1.1...v1.1.2) (2025-07-02)
 
 
