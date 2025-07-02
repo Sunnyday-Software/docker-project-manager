@@ -46,7 +46,7 @@ fi
 
 # Installa o aggiorna alla versione specifica se richiesta
 if [ -n "$DESIRED_VERSION" ]; then
-    echo "Installazione della versione specifica: $DESIRED_VERSION"
+    echo "Installazione della versione specifica : $DESIRED_VERSION"
     rustup toolchain install "$DESIRED_VERSION"
     rustup default "$DESIRED_VERSION"
     echo "Versione $DESIRED_VERSION impostata come default"
