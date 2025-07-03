@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.1.7...v1.2.0) (2025-07-03)
+
+
+### Features
+
+* enhance S-expression parsing and add Docker CLI configuration commands ([78eeb5c](https://github.com/Sunnyday-Software/docker-project-manager/commit/78eeb5c099ec183252b0b37bff51c3651e223dc5))
+
 ## [1.1.7](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.1.6...v1.1.7) (2025-07-02)
 
 
