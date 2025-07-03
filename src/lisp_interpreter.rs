@@ -544,7 +544,7 @@ impl CommandRegistry {
   }
 }
 
-/// Parse a string containing S-expressions into a vector of AST nodes
+/// Enhanced parsing function that handles multi-line expressions
 ///
 /// # Arguments
 /// * `input` - String containing S-expressions
@@ -553,16 +553,83 @@ impl CommandRegistry {
 /// * `Result<Vec<lexpr::Value>, String>` - Vector of parsed AST nodes or error
 pub fn parse_string(input: &str) -> Result<Vec<lexpr::Value>, String> {
   let mut results = Vec::new();
-  let mut remaining = input.trim();
+  let trimmed = input.trim();
 
-  while !remaining.is_empty() {
-    match lexpr::from_str(remaining) {
-      Ok(value) => {
-        results.push(value);
-        // For simplicity, we'll assume one expression per call
-        // In a full implementation, you'd need to track position
-        break;
+  if trimmed.is_empty() {
+    return Ok(results);
+  }
+
+  // Try simple parsing first
+  match lexpr::from_str(trimmed) {
+    Ok(value) => {
+      results.push(value);
+      return Ok(results);
+    }
+    Err(_) => {} // Continue with advanced parsing
+  }
+
+  // Advanced parsing for multi-line expressions
+  let mut chars = trimmed.chars().peekable();
+  let mut current_expr = String::new();
+  let mut paren_depth = 0;
+  let mut in_string = false;
+  let mut escape_next = false;
+
+  while let Some(ch) = chars.next() {
+    if escape_next {
+      current_expr.push(ch);
+      escape_next = false;
+      continue;
+    }
+
+    match ch {
+      '\\' if in_string => {
+        current_expr.push(ch);
+        escape_next = true;
       }
+      '"' => {
+        current_expr.push(ch);
+        in_string = !in_string;
+      }
+      '(' if !in_string => {
+        current_expr.push(ch);
+        paren_depth += 1;
+      }
+      ')' if !in_string => {
+        current_expr.push(ch);
+        paren_depth -= 1;
+
+        if paren_depth == 0 {
+          let expr = current_expr.trim();
+          if !expr.is_empty() {
+            match lexpr::from_str(expr) {
+              Ok(value) => results.push(value),
+              Err(e) => {
+                return Err(format!(
+                  "Parse error in expression '{}': {}",
+                  expr, e
+                ));
+              }
+            }
+          }
+          current_expr.clear();
+        }
+      }
+      _ => {
+        current_expr.push(ch);
+      }
+    }
+  }
+
+  // Handle remaining expression
+  let remaining = current_expr.trim();
+  if !remaining.is_empty() {
+    if paren_depth != 0 {
+      return Err(format!("Unbalanced parentheses: {}", remaining));
+    }
+
+    match lexpr::from_str(remaining) {
+      Ok(value) => results.push(value),
       Err(e) => return Err(format!("Parse error: {}", e)),
     }
   }
@@ -572,6 +639,57 @@ pub fn parse_string(input: &str) -> Result<Vec<lexpr::Value>, String> {
   }
 
   Ok(results)
+}
+
+/// Normalize whitespace and parse multi-line expressions
+///
+/// # Arguments
+/// * `input` - String containing S-expressions with potential comments and multi-line formatting
+///
+/// # Returns
+/// * `Result<Vec<lexpr::Value>, String>` - Vector of parsed AST nodes or error
+pub fn parse_string_normalized(
+  input: &str,
+) -> Result<Vec<lexpr::Value>, String> {
+  let normalized = input
+    .lines()
+    .map(|line| {
+      // Remove inline comments
+      let without_comment = if let Some(pos) = line.find(';') {
+        &line[..pos]
+      } else {
+        line
+      };
+      without_comment.trim()
+    })
+    .filter(|line| !line.is_empty())
+    .collect::<Vec<_>>()
+    .join(" ");
+
+  parse_string(&normalized)
+}
+
+/// Format multi-line S-expression to single line
+///
+/// # Arguments
+/// * `input` - String containing potentially multi-line S-expressions
+///
+/// # Returns
+/// * `String` - Formatted single-line S-expression
+pub fn format_sexpr(input: &str) -> String {
+  input
+    .lines()
+    .map(|line| {
+      let trimmed = if let Some(comment_pos) = line.find(';') {
+        line[..comment_pos].trim()
+      } else {
+        line.trim()
+      };
+      trimmed
+    })
+    .filter(|line| !line.is_empty())
+    .collect::<Vec<_>>()
+    .join(" ")
 }
 
 /// Evaluate a single AST node
@@ -649,7 +767,8 @@ pub fn evaluate_string(
   input: &str,
   ctx: &mut Context,
 ) -> Result<Value, String> {
-  let ast_nodes = parse_string(input)?;
+  let ast_nodes =
+    parse_string_normalized(input).or_else(|_| parse_string(input))?;
   let mut last_result = Value::Nil;
 
   for ast in ast_nodes {
@@ -725,8 +844,8 @@ pub fn value_to_bool(value: &Value) -> Result<bool, String> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::commands::{PrintCommand, SumCommand, PipeCommand, DebugCommand};
-  use crate::commands::{register_list_commands, register_help_commands};
+  use crate::commands::{DebugCommand, PipeCommand, PrintCommand, SumCommand};
+  use crate::commands::{register_help_commands, register_list_commands};
 
   /// Test helper function to register builtin commands for testing
   fn register_test_commands(registry: &mut CommandRegistry) {
@@ -855,5 +974,41 @@ mod tests {
     let error_result = evaluate_string("(debug \"true\" \"extra\")", &mut ctx);
     assert!(error_result.is_err());
     assert!(error_result.unwrap_err().contains("exactly one argument"));
+  }
+
+  #[test]
+  fn test_multiline_parsing_issue() {
+    // Test case from the issue description - this should fail with current implementation
+    let multiline_input = r#"(docker-compose-args 
+        "compose" 
+        "-f" 
+        "docker-compose.core.yml" 
+        "-f" 
+        "docker-compose.yml" 
+        "run" 
+        "--rm" 
+        "--no-deps" 
+        "-T")"#;
+
+    // Test current parse_string function - this should fail
+    let result = parse_string(multiline_input);
+    println!("Multi-line parsing result: {:?}", result);
+
+    // For now, we expect this to fail, but after implementing the fix it should succeed
+    // assert!(result.is_err(), "Current implementation should fail on multi-line input");
+
+    // Test that lexpr::from_str works with normalized input
+    let normalized_input = multiline_input
+      .lines()
+      .map(|line| line.trim())
+      .filter(|line| !line.is_empty())
+      .collect::<Vec<_>>()
+      .join(" ");
+
+    let lexpr_result = lexpr::from_str(&normalized_input);
+    assert!(
+      lexpr_result.is_ok(),
+      "lexpr should work with normalized input"
+    );
   }
 }
