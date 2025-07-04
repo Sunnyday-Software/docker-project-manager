@@ -2,7 +2,7 @@ name: Build
 
 on:
   workflow_call:
-    inputs:  # 👈 Definisci gli input che ricevi
+    inputs: # 👈 Definisci gli input che ricevi
       version:
         required: true
         type: string
@@ -89,7 +89,7 @@ jobs:
           docker run --rm --platform linux/arm64 \
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
-            sunnydaysoftware/make:9391b157-arm64 \
+            sunnydaysoftware/make:latest \
             bash -c "./build-linux-arm.sh"
       - name: Archive build artifacts (Unix)
         run: |
