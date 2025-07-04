@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.2.0...v1.3.0) (2025-07-04)
+
+
+### Features
+
+* **file_ops:** include relative file paths in MD5 hashing ([dc5b1c6](https://github.com/Sunnyday-Software/docker-project-manager/commit/dc5b1c62e9c1f6baa9b3d65b5455032a5b0308f2))
+
 # [1.2.0](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.1.7...v1.2.0) (2025-07-03)
 
 
