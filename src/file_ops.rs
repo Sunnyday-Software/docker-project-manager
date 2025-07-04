@@ -53,8 +53,15 @@ pub fn compute_dir_md5(
     let mut contents = Vec::new();
     file.read_to_end(&mut contents)?;
 
+    // Calcola il percorso relativo dalla directory base
+    let relative_path = file_path
+      .strip_prefix(dir)
+      .unwrap_or(&file_path)
+      .to_string_lossy();
+
     let mut hasher = Md5::new();
     hasher.update(&contents);
+    hasher.update(relative_path.as_bytes()); // Percorso relativo
     let result = hasher.finalize();
 
     md5_sums.push(format!("{:x}", result));
@@ -118,7 +125,10 @@ pub fn read_env_file(path: &str) -> io::Result<HashMap<String, String>> {
 ///
 /// # Returns
 /// * `io::Result<()>` - Result indicating success or failure
-pub fn write_env_file(path: &str, env_vars: &HashMap<String, String>) -> io::Result<()> {
+pub fn write_env_file(
+  path: &str,
+  env_vars: &HashMap<String, String>,
+) -> io::Result<()> {
   let mut file = OpenOptions::new()
     .write(true)
     .create(true)
