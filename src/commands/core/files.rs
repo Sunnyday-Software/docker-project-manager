@@ -11,7 +11,7 @@ pub fn register_file_commands(registry: &mut CommandRegistry) {
     "fs-list",
     "List files in the current directory matching a wildcard pattern",
     "(fs-list pattern)",
-    "  (fs-list \"*.rs\")        ; List Rust source files in current dir\n  (fs-list \"config.*\")    ; List files starting with 'config.'",
+    "  (fs-list \"*.rs\"); List Rust source files in current dir\n  (fs-list \"config.*\")    ; List files starting with 'config.'",
     &tags::COMMANDS,
     |args, ctx| {
       debug_log(ctx, "fs-list", "executing fs-list command");
