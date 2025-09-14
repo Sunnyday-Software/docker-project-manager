@@ -9,6 +9,7 @@ pub mod print;
 pub mod read_env;
 pub mod sum;
 pub mod vars;
+pub mod files;
 
 pub use basedir::register_basedir_commands;
 pub use concat::ConcatCommand;
@@ -21,3 +22,4 @@ pub use print::PrintCommand;
 pub use read_env::register_app_commands;
 pub use sum::SumCommand;
 pub use vars::register_var_commands;
+pub use files::register_file_commands;

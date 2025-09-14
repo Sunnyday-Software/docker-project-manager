@@ -1,4 +1,5 @@
 use crate::commands::core::vars::register_var_commands;
+use crate::commands::core::files::register_file_commands;
 use crate::commands::app::write_env::register_write_env_command;
 use crate::commands::app::version_check::register_version_check_command;
 use crate::commands::app::docker::register_docker_command;
@@ -12,6 +13,9 @@ pub fn register_app_commands(registry: &mut CommandRegistry) {
   // Register the variable commands (get-var and set-var)
   register_var_commands(registry);
 
+  // Register filesystem-related core commands
+  register_file_commands(registry);
+
   // Register the write-env command
   register_write_env_command(registry);
 
@@ -24,94 +28,122 @@ pub fn register_app_commands(registry: &mut CommandRegistry) {
   // Register the read-env command
   registry.register_closure_with_help_and_tag(
     "read-env",
-    "Read environment variables from a file and store them in the context",
-    "(read-env path)",
-    "  (read-env \"config.env\")     ; Read from config.env relative to basedir\n  (read-env \"../shared.env\")  ; Read from parent directory",
+    "Read environment variables from a file or a list of files and store them in the context",
+    "(read-env path-or-list)",
+    "  (read-env \"config.env\")                 ; Read from config.env relative to basedir\n  (read-env (list \"a.env\" \"b.env\"))   ; Read multiple files in order",
     &tags::COMMANDS,
     |args, ctx| {
       debug_log(ctx, "read-env", "executing read-env command");
 
       if args.len() != 1 {
-        return Err("read-env expects exactly one argument (path)".to_string());
+        return Err("read-env expects exactly one argument (path string or list of strings)".to_string());
       }
 
-      let path_arg = match &args[0] {
-        Value::Str(s) => s.clone(),
-        _ => return Err("read-env path must be a string".to_string()),
-      };
+      // Helper to process a single file path string and return a per-file message
+      let mut process_one = |path_arg: &str| -> Result<String, String> {
+        debug_log(ctx, "read-env", &format!("processing path argument: {}", path_arg));
 
-      debug_log(ctx, "read-env", &format!("processing path argument: {}", path_arg));
+        // Resolve path relative to basedir
+        let basedir = ctx.get_basedir();
+        let file_path = basedir.join(path_arg);
 
-      // Resolve path relative to basedir
-      let basedir = ctx.get_basedir();
-      let file_path = basedir.join(&path_arg);
+        debug_log(ctx, "read-env", &format!("resolved file path: {}", file_path.display()));
 
-      debug_log(ctx, "read-env", &format!("resolved file path: {}", file_path.display()));
-
-      // Check if file exists
-      if !file_path.exists() {
-        return Err(format!("File does not exist: {}", file_path.display()));
-      }
-
-      // Read file contents
-      let contents = match fs::read_to_string(&file_path) {
-        Ok(content) => content,
-        Err(e) => return Err(format!("Failed to read file {}: {}", file_path.display(), e)),
-      };
-
-      debug_log(ctx, "read-env", "file read successfully, processing lines");
-
-      let mut variables_loaded = 0;
-      let mut lines_processed = 0;
-
-      // Process each line
-      for (line_num, line) in contents.lines().enumerate() {
-        lines_processed += 1;
-        let trimmed = line.trim();
-
-        // Skip empty lines and comments
-        if trimmed.is_empty() || trimmed.starts_with('#') {
-          debug_log(ctx, "read-env", &format!("skipping line {}: empty or comment", line_num + 1));
-          continue;
+        // Check if file exists
+        if !file_path.exists() {
+          return Err(format!("File does not exist: {}", file_path.display()));
         }
 
-        // Parse key=value format
-        if let Some(eq_pos) = trimmed.find('=') {
-          let key = trimmed[..eq_pos].trim().to_string();
-          let value = trimmed[eq_pos + 1..].trim().to_string();
+        // Read file contents
+        let contents = match fs::read_to_string(&file_path) {
+          Ok(content) => content,
+          Err(e) => return Err(format!("Failed to read file {}: {}", file_path.display(), e)),
+        };
 
-          if key.is_empty() {
-            debug_log(ctx, "read-env", &format!("skipping line {}: empty key", line_num + 1));
+        debug_log(ctx, "read-env", "file read successfully, processing lines");
+
+        let mut variables_loaded = 0;
+        let mut lines_processed = 0;
+
+        // Process each line
+        for (line_num, line) in contents.lines().enumerate() {
+          lines_processed += 1;
+          let trimmed = line.trim();
+
+          // Skip empty lines and comments
+          if trimmed.is_empty() || trimmed.starts_with('#') {
+            debug_log(ctx, "read-env", &format!("skipping line {}: empty or comment", line_num + 1));
             continue;
           }
 
-          debug_log(ctx, "read-env", &format!("found variable: {} = {}", key, value));
+          // Parse key=value format
+          if let Some(eq_pos) = trimmed.find('=') {
+            let key = trimmed[..eq_pos].trim().to_string();
+            let value = trimmed[eq_pos + 1..].trim().to_string();
 
-          // Interpolate variables in the value
-          let interpolated_value = match interpolate_variables(&value, ctx) {
-            Ok(val) => val,
-            Err(e) => return Err(format!("Error interpolating variable '{}': {}", key, e)),
-          };
+            if key.is_empty() {
+              debug_log(ctx, "read-env", &format!("skipping line {}: empty key", line_num + 1));
+              continue;
+            }
 
-          debug_log(ctx, "read-env", &format!("interpolated value: {} = {}", key, interpolated_value));
+            debug_log(ctx, "read-env", &format!("found variable: {} = {}", key, value));
 
-          // Store in context
-          ctx.set_variable(key, Value::Str(interpolated_value));
-          variables_loaded += 1;
-        } else {
-          debug_log(ctx, "read-env", &format!("skipping line {}: no '=' found", line_num + 1));
+            // Interpolate variables in the value
+            let interpolated_value = match interpolate_variables(&value, ctx) {
+              Ok(val) => val,
+              Err(e) => return Err(format!("Error interpolating variable '{}': {}", key, e)),
+            };
+
+            debug_log(ctx, "read-env", &format!("interpolated value: {} = {}", key, interpolated_value));
+
+            // Store in context
+            ctx.set_variable(key, Value::Str(interpolated_value));
+            variables_loaded += 1;
+          } else {
+            debug_log(ctx, "read-env", &format!("skipping line {}: no '=' found", line_num + 1));
+          }
         }
+
+        let result_msg = format!(
+          "Loaded {} variables from {} (processed {} lines)",
+          variables_loaded,
+          file_path.display(),
+          lines_processed
+        );
+
+        debug_log(ctx, "read-env", &format!("completed: {}", result_msg));
+        Ok(result_msg)
+      };
+
+      match &args[0] {
+        Value::Str(s) => {
+          // Single file behavior preserved
+          let msg = process_one(s)?;
+          Ok(Value::Str(msg))
+        }
+        Value::List(items) => {
+          // Expect list of strings
+          let mut results: Vec<Value> = Vec::new();
+          for (idx, item) in items.iter().enumerate() {
+            let path = match item {
+              Value::Str(s) => s,
+              other => {
+                return Err(format!(
+                  "read-env list expects strings, found non-string value at position {}",
+                  idx
+                ));
+              }
+            };
+            let msg = process_one(path)?;
+            results.push(Value::Str(msg));
+          }
+          Ok(Value::List(results))
+        }
+        other => Err(format!(
+          "read-env expects a path string or a list of strings, found unexpected value: {}",
+          other.to_string()
+        )),
       }
-
-      let result_msg = format!(
-        "Loaded {} variables from {} (processed {} lines)",
-        variables_loaded,
-        file_path.display(),
-        lines_processed
-      );
-
-      debug_log(ctx, "read-env", &format!("completed: {}", result_msg));
-      Ok(Value::Str(result_msg))
     },
   );
 }
