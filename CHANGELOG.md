@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.3.0...v1.4.0) (2025-09-14)
+
+
+### Features
+
+* file list ([0d911ce](https://github.com/Sunnyday-Software/docker-project-manager/commit/0d911cec9272f77b3a5353ab9ed1369529e57184))
+
 # [1.3.0](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.2.0...v1.3.0) (2025-07-04)
 
 
