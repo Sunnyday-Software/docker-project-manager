@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.4.0...v1.4.1) (2025-09-14)
+
+
+### Bug Fixes
+
+* regex deps ([77ea098](https://github.com/Sunnyday-Software/docker-project-manager/commit/77ea09898389582ea62f4013218379ebfde7b85e))
+
 # [1.4.0](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.3.0...v1.4.0) (2025-09-14)
 
 
