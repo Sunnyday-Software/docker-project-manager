@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.4.1...v1.5.0) (2025-09-16)
+
+
+### Features
+
+* hide sensitive env vars ([371a312](https://github.com/Sunnyday-Software/docker-project-manager/commit/371a312a14c7f13ae0f858a06af06251a0809dff))
+
 ## [1.4.1](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.4.0...v1.4.1) (2025-09-14)
 
 
