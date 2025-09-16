@@ -115,6 +115,30 @@ impl Context {
   /// Print the current context state
   /// Returns a formatted string with all context information
   pub fn print_debug_info(&self) -> String {
+    fn is_sensitive_key(name: &str) -> bool {
+      let n = name.to_lowercase();
+      let patterns = [
+        "password",
+        "passwd",
+        "pwd",
+        "token",
+        "secret",
+        "api_key",
+        "apikey",
+        "access_key",
+        "private_key",
+        "ssh_key",
+        "auth",
+        "authorization",
+        "bearer",
+        "jwt",
+        "session",
+      ];
+      patterns.iter().any(|p| n.contains(p))
+    }
+
+    fn masked() -> String { "******".to_string() }
+
     let mut output = String::new();
 
     // Print header
@@ -134,7 +158,12 @@ impl Context {
       output.push_str("  (no variables set)\n");
     } else {
       for (name, value) in &self.variables {
-        output.push_str(&format!("  {} = {}\n", name, value.to_string()));
+        let rendered = if is_sensitive_key(name) {
+          masked()
+        } else {
+          value.to_string()
+        };
+        output.push_str(&format!("  {} = {}\n", name, rendered));
       }
     }
 
@@ -144,6 +173,7 @@ impl Context {
       output.push_str("  (no versions set)\n");
     } else {
       for (key, version_info) in &self.versions {
+        // Version info is not expected to contain secrets; print as is
         output.push_str(&format!(
           "  {} = {{ v_name: {}, real_name: {}, checksum: {} }}\n",
           key,
