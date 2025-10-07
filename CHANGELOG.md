@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.6.0...v1.6.1) (2025-10-07)
+
+
+### Bug Fixes
+
+* typos ([38f1115](https://github.com/Sunnyday-Software/docker-project-manager/commit/38f11151eee214b333ce8bba1b02fab4e74edabc))
+
 # [1.6.0](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.5.0...v1.6.0) (2025-10-07)
 
 
