@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.5.0...v1.6.0) (2025-10-07)
+
+
+### Features
+
+* reworked tty logic and input arguments ([816b464](https://github.com/Sunnyday-Software/docker-project-manager/commit/816b4649763163f94aa40eebdb45fbadb9718c33)), closes [#0](https://github.com/Sunnyday-Software/docker-project-manager/issues/0)
+
 # [1.5.0](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.4.1...v1.5.0) (2025-09-16)
 
 
