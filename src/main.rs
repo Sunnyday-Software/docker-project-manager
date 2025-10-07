@@ -103,7 +103,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     "--command" => {
       if args.len() < 2 {
-        println!("Error: --command requires a command string\n");
+        println!("Error: --command requires a command string.\n");
         print_usage();
         return Err("missing --command argument".into());
       }
@@ -119,7 +119,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     "--file" => {
       if args.len() < 2 {
-        println!("Error: --file requires a path to a file\n");
+        println!("Error: --file requires a path to a file.\n");
         print_usage();
         return Err("missing --file argument".into());
       }
