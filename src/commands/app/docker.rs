@@ -5,7 +5,8 @@ use crate::utils::{get_home_directory, socket_exists};
 use crate::{CommandRegistry, Context, Value, tags};
 use std::collections::HashMap;
 use std::env;
-use std::process::Command;
+use std::process::{Command, Stdio};
+use std::io::{stdin, stdout, IsTerminal};
 
 /// Configuration structure for Docker commands
 /// Allows dynamic configuration of Docker command behavior through Lisp functions
@@ -160,11 +161,38 @@ fn build_docker_config(ctx: &Context) -> DockerCommandConfig {
   config
 }
 
+/// Configura un [`Command`] per comportarsi come un processo TTY interattivo se possibile.
+/// - Se stdin/stdout sono TTY → eredita gli stream, abilita interattività.
+/// - Se non lo sono → disabilita il TTY, ma mantiene output visibile.
+pub fn prepare_tty_command(mut cmd: Command) -> Command {
+  let stdin_tty = stdin().is_terminal();
+  let stdout_tty = stdout().is_terminal();
+  let have_tty = stdin_tty && stdout_tty;
+
+  // Eredita sempre gli stream dal processo padre
+  cmd.stdin(Stdio::inherit())
+     .stdout(Stdio::inherit())
+     .stderr(Stdio::inherit());
+
+  // Se abbiamo una console TTY, possiamo impostare env/flag opzionali
+  if have_tty {
+    println!("TTY DETECTED");
+    // Puoi settare env custom o logging più verboso se serve
+    cmd.env("TERM", std::env::var("TERM").unwrap_or_else(|_| "xterm-256color".into()));
+  } else {
+    println!("NO TTY DETECTED");
+    // In ambienti non interattivi puoi regolare l’ambiente
+    cmd.env("NO_TTY", "1");
+  }
+
+  cmd
+}
+
 /// Executes a generic command with arguments
 fn execute_command(command: &str, args: &[String], ctx: &Context) -> Result<(), String> {
   debug_log(ctx, "docker", &format!("executing command: {} {:?}", command, args));
 
-  let mut cmd = Command::new(command);
+  let mut cmd = prepare_tty_command(Command::new(command));
   cmd.current_dir(ctx.get_basedir());
   cmd.args(args);
 
@@ -202,7 +230,7 @@ fn execute_docker_command_with_config(
   }
 
   // Prepare Docker command
-  let mut command = Command::new("docker");
+  let mut command = prepare_tty_command(Command::new("docker"));
   command.current_dir(ctx.get_basedir());
 
   // Use configured compose args or fallback to defaults
@@ -608,7 +636,7 @@ fn execute_docker_command_internal(
   verbose: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
   // Prepara il comando Docker
-  let mut command = Command::new("docker");
+  let mut command = prepare_tty_command(Command::new("docker"));
   command.current_dir(ctx.get_basedir());
   command.args(DOCKER_COMPOSE_ARGS);
 
