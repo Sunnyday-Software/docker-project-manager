@@ -71,7 +71,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   if args.is_empty() {
     // No arguments: show usage and exit
     print_usage();
-    return Ok(());
+    eprintln!("Error: one of --pipe, --command or --file is required.");
+    std::process::exit(2);
   }
 
   match args[0].as_str() {
@@ -136,7 +137,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     _ => {
       // Unknown option: show usage
       print_usage();
-      return Ok(());
+      eprintln!(
+        "Error: unknown option '{}'. Use --pipe, --command or --file.",
+        args[0]
+      );
+      std::process::exit(2);
     }
   }
 
