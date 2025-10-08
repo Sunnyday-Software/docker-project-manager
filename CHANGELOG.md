@@ -1,3 +1,10 @@
+## [1.6.2](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.6.1...v1.6.2) (2025-10-08)
+
+
+### Bug Fixes
+
+* input arguments ([6e7cdb5](https://github.com/Sunnyday-Software/docker-project-manager/commit/6e7cdb5f1f6fafb0cf0634c683a24a05eccc7d37))
+
 ## [1.6.1](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.6.0...v1.6.1) (2025-10-07)
 
 
