@@ -1,0 +1,285 @@
+= Supply Chain Security
+:navtitle: Supply Chain
+:description: DPM's supply chain security practices
+
+== Overview
+
+DPM ensures supply chain security through dependency management, license compliance, and vulnerability scanning.
+
+== Dependency Management
+
+=== Cargo Deny Configuration
+
+DPM uses `cargo-deny` to enforce security policies:
+
+[source,toml]
+----
+# deny.toml
+[advisories]
+vulnerability = "deny"
+unmaintained = "warn"
+yanked = "warn"
+notice = "warn"
+
+[licenses]
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "GPL-3.0",
+    "ISC",
+]
+deny = [
+    "GPL-2.0",
+    "AGPL-3.0",
+]
+
+[bans]
+multiple-versions = "warn"
+wildcards = "allow"
+highlight = "all"
+
+[sources]
+unknown-registry = "warn"
+unknown-git = "warn"
+allow-registry = [
+    "https://github.com/rust-lang/crates.io-index",
+]
+allow-git = []
+----
+
+=== Allowed Licenses
+
+Only approved licenses are allowed:
+
+[cols="1,2", frame=none]
+|===
+| *License* | *Why Approved*
+
+| MIT | Permissive, widely used
+| Apache-2.0 | Permissive, patent grant
+| BSD-2-Clause | Permissive, simple
+| BSD-3-Clause | Permissive, no endorsement
+| GPL-3.0 | Copyleft, DPM's license
+| ISC | Permissive, simple
+|===
+
+=== Denied Licenses
+
+These licenses are blocked:
+
+[cols="1,2", frame=none]
+|===
+| *License* | *Why Denied*
+
+| GPL-2.0 | Incompatible with GPL-3.0
+| AGPL-3.0 | Network copyleft, restrictive
+|===
+
+== Vulnerability Scanning
+
+=== GitHub Dependabot
+
+Automated vulnerability alerts:
+
+1. **Dependency scanning**: Daily scans
+2. **Security alerts**: Email notifications
+3. **Automated PRs**: Fix pull requests
+
+=== cargo-deny
+
+Local and CI vulnerability checks:
+
+[source,bash]
+----
+# Check for vulnerabilities
+cargo deny check advisories
+
+# Check licenses
+cargo deny check licenses
+
+# Check bans
+cargo deny check bans
+
+# Check sources
+cargo deny check sources
+----
+
+=== CVE Monitoring
+
+Continuous monitoring for CVEs:
+
+1. **RustSec Advisory Database**: Rust-specific vulnerabilities
+2. **GitHub Advisory Database**: General vulnerabilities
+3. **NVD**: National Vulnerability Database
+
+== License Compliance
+
+=== SBOM Generation
+
+Software Bill of Materials:
+
+1. **GitHub dependency graph**: Automatic SBOM
+2. **cargo tree**: Dependency tree
+3. **License report**: License summary
+
+=== License Verification
+
+Verify license compliance:
+
+[source,bash]
+----
+# Generate license report
+cargo tree --prefix none --no-dedupe | sort | uniq
+
+# Check specific dependency
+cargo tree -i <package> --prefix none
+----
+
+=== License Compatibility
+
+Ensure license compatibility:
+
+1. **GPL-3.0 compatibility**: All dependencies compatible
+2. **No copyleft conflicts**: Avoid license conflicts
+3. **Clear attribution**: Proper license attribution
+
+== Build Security
+
+=== Reproducible Builds
+
+DPM builds are reproducible:
+
+1. **Locked dependencies**: `Cargo.lock` committed
+2. **Deterministic builds**: Same input → same output
+3. **Cross-platform**: Consistent across platforms
+
+=== Build Verification
+
+Verify build integrity:
+
+[source,bash]
+----
+# Build and verify
+cargo build --release
+
+# Verify binary
+sha256sum target/release/dpm
+
+# Compare with official release
+----
+
+=== Binary Signing
+
+Release binaries are signed:
+
+1. **GitHub Releases**: Signed with GPG
+2. **Checksum verification**: SHA256 checksums
+3. **Signature validation**: Verify binary authenticity
+
+== Dependency Updates
+
+=== Update Strategy
+
+Safe dependency updates:
+
+1. **Automated updates**: Dependabot PRs
+2. **Manual review**: Review all updates
+3. **Testing**: Test before merging
+4. **Rollback**: Easy rollback if issues
+
+=== Update Process
+
+1. **Monitor**: Check for updates
+2. **Review**: Review changelog
+3. **Test**: Run tests
+4. **Merge**: Merge if safe
+5. **Deploy**: Deploy updated version
+
+=== Pinning Strategy
+
+Dependency pinning:
+
+1. **Lock file**: `Cargo.lock` committed
+2. **Version ranges**: Conservative ranges
+3. **Explicit versions**: Avoid wildcards
+
+== Security Monitoring
+
+=== Continuous Monitoring
+
+1. **GitHub Security**: Security tab monitoring
+2. **Dependabot**: Automated alerts
+3. **cargo-deny**: CI integration
+
+=== Alert Response
+
+Respond to security alerts:
+
+1. **Acknowledge**: Acknowledge alert
+2. **Investigate**: Investigate impact
+3. **Fix**: Develop fix
+4. **Test**: Test fix
+5. **Release**: Release patch
+
+=== Incident Response
+
+Security incident response:
+
+1. **Detection**: Detect incident
+2. **Containment**: Contain impact
+3. **Investigation**: Investigate cause
+4. **Remediation**: Fix issue
+5. **Recovery**: Restore service
+6. **Lessons learned**: Document lessons
+
+== Best Practices
+
+=== Dependency Management
+
+1. **Minimal dependencies**: Only necessary dependencies
+2. **Trusted sources**: Use trusted registries
+3. **Regular updates**: Keep dependencies updated
+4. **Security audits**: Regular security audits
+
+=== License Management
+
+1. **Clear licensing**: Clear license policy
+2. **Compliance checks**: Regular compliance checks
+3. **Attribution**: Proper attribution
+4. **Documentation**: Document license choices
+
+=== Vulnerability Management
+
+1. **Scanning**: Regular vulnerability scans
+2. **Patching**: Prompt patching
+3. **Monitoring**: Continuous monitoring
+4. **Response**: Incident response plan
+
+== Tools and Resources
+
+=== Security Tools
+
+[cols="1,2", frame=none]
+|===
+| *Tool* | *Purpose*
+
+| cargo-deny | License and vulnerability checks
+| cargo-audit | Vulnerability scanning
+| cargo-tree | Dependency tree
+| GitHub Dependabot | Automated updates
+|===
+
+=== Resources
+
+1. **RustSec**: Rust security advisories
+2. **GitHub Security**: Security best practices
+3. **OWASP**: Security guidelines
+4. **NIST**: Cybersecurity framework
+
+== See Also
+
+* xref:security-overview.adoc[Security Overview]
+* xref:best-practices.adoc[Best Practices]
+* xref:deployment:ci-cd.adoc[CI/CD Security]

@@ -1,0 +1,335 @@
+= Core Commands
+:navtitle: Core Commands
+:description: Basic operations, arithmetic, and I/O commands
+
+== print
+
+Concatenates arguments and outputs as string.
+
+=== Syntax
+
+[source,lisp]
+----
+(print arg1 arg2 ...)
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `...` | Values to concatenate (strings, numbers auto-converted)
+|===
+
+=== Return Value
+
+Returns concatenated string.
+
+=== Examples
+
+[source,lisp]
+----
+(print "Hello" " " "World")  ; => "Hello World"
+(print 42)                   ; => "42"
+(print "The answer is " (+ 20 22))  ; => "The answer is 42"
+----
+
+== + (sum)
+
+Adds all numeric arguments.
+
+=== Syntax
+
+[source,lisp]
+----
+(+ n1 n2 ...)
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `n1, n2, ...` | Numbers to add
+|===
+
+=== Return Value
+
+Returns sum as integer.
+
+=== Examples
+
+[source,lisp]
+----
+(+ 1 2 3)    ; => 6
+(+ 10 20)    ; => 30
+(+ 1 2 (+ 3 4))  ; => 10 (nested)
+----
+
+== * (multiply)
+
+Multiplies all numeric arguments.
+
+=== Syntax
+
+[source,lisp]
+----
+(* n1 n2 ...)
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `n1, n2, ...` | Numbers to multiply
+|===
+
+=== Return Value
+
+Returns product as integer.
+
+=== Examples
+
+[source,lisp]
+----
+(* 2 3)      ; => 6
+(* 2 3 4)    ; => 24
+(* 2 (* 3 4))  ; => 24 (nested)
+----
+
+== concat
+
+Concatenates strings.
+
+=== Syntax
+
+[source,lisp]
+----
+(concat s1 s2 ...)
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `s1, s2, ...` | Strings to concatenate
+|===
+
+=== Return Value
+
+Returns concatenated string.
+
+=== Examples
+
+[source,lisp]
+----
+(concat "Hello" " " "World")  ; => "Hello World"
+(concat "Path: " "/home/user")  ; => "Path: /home/user"
+----
+
+== debug
+
+Outputs debug information with automatic sensitive data masking.
+
+=== Syntax
+
+[source,lisp]
+----
+(debug label value)
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `label` | Label for debug output
+| `value` | Value to display (sensitive data auto-masked)
+|===
+
+=== Return Value
+
+Returns nil.
+
+=== Examples
+
+[source,lisp]
+----
+(debug "name" "John")  ; => Debug: name = John
+(debug "password" "secret123")  ; => Debug: password = ******
+----
+
+=== Sensitive Data Masking
+
+These keywords trigger automatic masking:
+
+* password, passwd, pwd
+* token, secret
+* api_key, apikey, access_key
+* private_key, ssh_key
+* auth, authorization, bearer, jwt, session
+
+== pipe
+
+Passes input through a pipeline of commands.
+
+=== Syntax
+
+[source,lisp]
+----
+(pipe expr1 expr2 ...)
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `expr1` | First expression (provides initial value)
+| `expr2, ...` | Subsequent expressions (use `_` for piped value)
+|===
+
+=== Return Value
+
+Returns final result.
+
+=== Examples
+
+[source,lisp]
+----
+(pipe
+  (+ 1 2 3)
+  (print "Sum is: " _))
+;; => "Sum is: 6"
+
+(pipe
+  (rust-env-current-dir)
+  (rust-path-filename _)
+  (print "Project: " _))
+;; => "Project: my-project"
+----
+
+== help
+
+Displays help information.
+
+=== Syntax
+
+[source,lisp]
+----
+(help)
+(help "command-name")
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `command-name` | (Optional) Specific command to get help for
+|===
+
+=== Return Value
+
+Returns nil.
+
+=== Examples
+
+[source,lisp]
+----
+(help)  ; Lists all commands
+(help "print")  ; Shows help for print command
+----
+
+== Variable Commands
+
+=== rust-env-set
+
+Sets an environment variable.
+
+=== Syntax
+
+[source,lisp]
+----
+(rust-env-set "NAME" "VALUE")
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `NAME` | Environment variable name
+| `VALUE` | Value to set
+|===
+
+=== Return Value
+
+Returns nil.
+
+=== Examples
+
+[source,lisp]
+----
+(rust-env-set "MY_VAR" "hello")
+(rust-env-set "PROJECT_NAME" (rust-path-filename (rust-env-current-dir)))
+----
+
+=== rust-env-var
+
+Gets an environment variable value.
+
+=== Syntax
+
+[source,lisp]
+----
+(rust-env-var "NAME")
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `NAME` | Environment variable name
+|===
+
+=== Return Value
+
+Returns variable value as string.
+
+=== Examples
+
+[source,lisp]
+----
+(rust-env-var "PATH")  ; => "/usr/bin:/bin:..."
+(rust-env-var "HOME")  ; => "/home/user"
+----
+
+== Conditional Commands (Future Feature)
+
+Future versions will support conditional execution:
+
+[source,lisp]
+----
+(if (rust-path-exists "config.json")
+  (rust-fs-read-to-string "config.json")
+  (print "Config not found"))
+----
+
+== See Also
+
+* xref:environment-commands.adoc[Environment Commands]
+* xref:filesystem-commands.adoc[Filesystem Commands]
+* xref:path-commands.adoc[Path Commands]

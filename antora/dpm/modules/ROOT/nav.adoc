@@ -1,0 +1,4 @@
+= ROOT
+:navtitle: Home
+
+* xref:index.adoc[DPM Home]

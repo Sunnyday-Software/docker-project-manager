@@ -1,0 +1,6 @@
+= Getting Started
+:navtitle: Getting Started
+
+* xref:installation.adoc[Installation]
+* xref:first-command.adoc[First Command]
+* xref:configuration.adoc[Configuration]

@@ -1,0 +1,40 @@
+@startuml docker-integration
+!theme cerulean
+
+package "DPM Docker Integration" {
+  [Socket Detection]
+  [Environment Setup]
+  [Docker Compose Command]
+}
+
+database "Docker Daemon" as daemon {
+  [Standard Socket]
+  [Desktop Socket]
+  [XDG Socket]
+}
+
+participant "User Script" as script
+participant "DPM" as dpm
+
+script -> dpm : (docker "up" "-d")
+dpm -> dpm : Detect socket location
+alt Standard Path
+  dpm -> daemon : /var/run/docker.sock
+else Docker Desktop
+  dpm -> daemon : ~/.docker/desktop/docker.sock
+else XDG Runtime
+  dpm -> daemon : $XDG_RUNTIME_DIR/docker.sock
+end
+
+dpm -> dpm : Set environment variables
+dpm -> daemon : docker compose run --rm -T
+
+note right of dpm
+  Socket auto-detection handles:
+  - Linux standard
+  - macOS Docker Desktop
+  - Linux with XDG_RUNTIME_DIR
+  - Custom via DOCKER_HOST_MAP
+end note
+
+@enduml

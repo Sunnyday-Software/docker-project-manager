@@ -1,0 +1,303 @@
+= Contributing
+:navtitle: Contributing
+:description: How to contribute to DPM
+
+== Overview
+
+Thank you for your interest in contributing to DPM! This guide will help you get started.
+
+== Getting Started
+
+=== Prerequisites
+
+1. **Rust**: Version 1.88.0 or later
+2. **Git**: Version control
+3. **GitHub Account**: For pull requests
+
+=== Fork and Clone
+
+1. Fork the repository on GitHub
+2. Clone your fork:
+
+[source,bash]
+----
+git clone https://github.com/YOUR_USERNAME/docker-project-manager.git
+cd docker-project-manager
+----
+
+3. Add upstream remote:
+
+[source,bash]
+----
+git remote add upstream https://github.com/Sunnyday-Software/docker-project-manager.git
+----
+
+=== Development Setup
+
+1. Install Rust:
+
+[source,bash]
+----
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+----
+
+2. Build project:
+
+[source,bash]
+----
+cargo build
+----
+
+3. Run tests:
+
+[source,bash]
+----
+cargo test
+----
+
+== Development Workflow
+
+=== Create Feature Branch
+
+[source,bash]
+----
+# Update main branch
+git checkout main
+git pull upstream main
+
+# Create feature branch
+git checkout -b feature/my-feature
+----
+
+=== Make Changes
+
+1. Write code
+2. Add tests
+3. Update documentation
+
+=== Commit Changes
+
+Use Conventional Commits:
+
+[source,bash]
+----
+git add .
+git commit -m "feat: add new command"
+----
+
+=== Push and Create PR
+
+[source,bash]
+----
+git push origin feature/my-feature
+----
+
+Then create a Pull Request on GitHub.
+
+== Code Style
+
+=== Rust Style
+
+DPM follows Rust style guidelines:
+
+[source,bash]
+----
+# Format code
+cargo fmt
+
+# Check style
+cargo clippy
+----
+
+=== Line Width
+
+80 characters maximum.
+
+=== Indentation
+
+2 spaces (no hard tabs).
+
+=== Imports
+
+Organize imports:
+
+[source,rust]
+----
+// Standard library
+use std::collections::HashMap;
+
+// External crates
+use lexpr::Value;
+
+// Local modules
+use crate::commands::Command;
+----
+
+== Testing
+
+=== Unit Tests
+
+Add tests for new functionality:
+
+[source,rust]
+----
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_my_function() {
+        assert_eq!(my_function(), expected_value);
+    }
+}
+----
+
+=== Integration Tests
+
+Test command integration:
+
+[source,rust]
+----
+#[test]
+fn test_command_integration() {
+    let mut registry = CommandRegistry::new();
+    registry.register(MyCommand);
+    let mut ctx = Context::new(registry);
+    
+    let result = evaluate_string("(my-command)", &mut ctx).unwrap();
+    assert_eq!(result, expected_value);
+}
+----
+
+=== Run Tests
+
+[source,bash]
+----
+# Run all tests
+cargo test
+
+# Run specific test
+cargo test test_my_function
+
+# Run with output
+cargo test -- --nocapture
+----
+
+== Documentation
+
+=== Code Documentation
+
+Document public APIs:
+
+[source,rust]
+----
+/// Executes the command with given arguments.
+///
+/// # Arguments
+///
+/// * `args` - Command arguments
+/// * `ctx` - Execution context
+///
+/// # Returns
+///
+/// Command result or error
+pub fn execute(&self, args: Vec<Value>, ctx: &mut Context) -> Result<Value, String> {
+    // Implementation
+}
+----
+
+=== Documentation Tests
+
+Include examples in documentation:
+
+[source,rust]
+----
+/// Adds two numbers.
+///
+/// # Examples
+///
+/// ```
+/// let result = add(2, 3);
+/// assert_eq!(result, 5);
+/// ```
+pub fn add(a: i64, b: i64) -> i64 {
+    a + b
+}
+----
+
+== Pull Request Process
+
+=== PR Checklist
+
+Before submitting:
+
+- [ ] Code follows style guidelines
+- [ ] Tests pass
+- [ ] Documentation updated
+- [ ] Commit messages follow Conventional Commits
+
+=== PR Description
+
+Include in PR description:
+
+1. **What**: What changes were made
+2. **Why**: Why changes were needed
+3. **How**: How changes were implemented
+4. **Testing**: How changes were tested
+
+=== Review Process
+
+1. **Automated checks**: CI runs tests
+2. **Code review**: Maintainer reviews code
+3. **Feedback**: Address review comments
+4. **Merge**: PR merged after approval
+
+== Issue Reporting
+
+=== Bug Reports
+
+Include in bug reports:
+
+1. **Description**: Clear description
+2. **Steps to reproduce**: Detailed steps
+3. **Expected behavior**: What should happen
+4. **Actual behavior**: What actually happens
+5. **Environment**: OS, Rust version, DPM version
+
+=== Feature Requests
+
+Include in feature requests:
+
+1. **Description**: Clear description
+2. **Use case**: Why feature is needed
+3. **Examples**: How feature would be used
+
+== Communication
+
+=== Channels
+
+1. **GitHub Issues**: Bug reports, feature requests
+2. **GitHub Discussions**: Questions, ideas
+3. **Pull Requests**: Code contributions
+
+=== Code of Conduct
+
+Follow the Contributor Covenant:
+
+1. **Be respectful**: Respect all contributors
+2. **Be constructive**: Provide constructive feedback
+3. **Be inclusive**: Welcome all contributors
+
+== Recognition
+
+Contributors are recognized in:
+
+1. **GitHub contributors**: Automatic recognition
+2. **Release notes**: Significant contributions
+3. **Documentation**: Documentation contributors
+
+== See Also
+
+* xref:code-style.adoc[Code Style]
+* xref:testing.adoc[Testing]
+* xref:release-process.adoc[Release Process]

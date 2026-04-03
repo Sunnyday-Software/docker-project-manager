@@ -1,0 +1,197 @@
+= Installation
+:navtitle: Installation
+:description: Get DPM installed on your system
+
+== Prerequisites
+
+* Operating System: Linux, macOS, or Windows
+* Docker (optional, only needed for Docker-specific commands)
+
+== Installation Methods
+
+=== Building from Source
+
+DPM is written in Rust and can be built from source:
+
+==== Prerequisites
+
+* Rust 1.88.0 or later
+* Git
+
+==== Linux
+
+[source,bash]
+----
+# Clone the repository
+git clone https://github.com/Sunnyday-Software/docker-project-manager.git
+cd docker-project-manager
+
+# Build for Linux
+chmod +x build-linux.sh
+./build-linux.sh
+
+# The binary will be in build/ directory
+./build/dpm
+----
+
+==== macOS
+
+[source,bash]
+----
+# Clone the repository
+git clone https://github.com/Sunnyday-Software/docker-project-manager.git
+cd docker-project-manager
+
+# Build for macOS
+chmod +x build-macos.sh
+./build-macos.sh
+
+# The binary will be in build/ directory
+./build/dpm
+----
+
+==== Windows
+
+[source,cmd]
+----
+# Clone the repository
+git clone https://github.com/Sunnyday-Software/docker-project-manager.git
+cd docker-project-manager
+
+# Build for Windows
+build-windows.bat
+
+# The binary will be in build\ directory
+build\dpm.exe
+----
+
+=== Quick Build (Development)
+
+For development, you can build directly with Cargo:
+
+[source,bash]
+----
+# Clone and build
+git clone https://github.com/Sunnyday-Software/docker-project-manager.git
+cd docker-project-manager
+cargo build --release
+
+# Run the binary
+./target/release/dpm
+----
+
+=== Docker (Coming Soon)
+
+Docker images will be available for easy deployment.
+
+== Verification
+
+After installation, verify DPM is working:
+
+[source,bash]
+----
+# Check version
+dpm --version
+
+# Or run a simple command
+echo '(print "Hello DPM")' | dpm --pipe
+----
+
+Expected output:
+
+[source]
+----
+Hello DPM
+----
+
+== Post-Installation Setup
+
+=== Add to PATH (Optional)
+
+For easier access, add DPM to your PATH:
+
+==== Linux/macOS
+
+[source,bash]
+----
+# Copy to a location in PATH
+sudo cp build/dpm /usr/local/bin/
+
+# Or add build directory to PATH
+echo 'export PATH="$PATH:./build"' >> ~/.bashrc
+source ~/.bashrc
+----
+
+==== Windows
+
+[source,cmd]
+----
+# Copy to a location in PATH
+copy build\dpm.exe C:\Windows\System32\
+
+# Or add to PATH environment variable
+set PATH=%PATH%;%CD%\build
+----
+
+=== Shell Completion (Future Feature)
+
+Shell completion scripts will be available in future versions.
+
+== Troubleshooting
+
+=== Common Issues
+
+==== Build Fails on Linux
+
+Problem: Missing dependencies
+
+Solution: Install required packages:
+
+[source,bash]
+----
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install build-essential pkg-config libssl-dev
+
+# Fedora/RHEL
+sudo dnf groupinstall "Development Tools"
+sudo dnf install openssl-devel
+----
+
+==== Build Fails on macOS
+
+Problem: Xcode Command Line Tools missing
+
+Solution: Install Xcode tools:
+
+[source,bash]
+----
+xcode-select --install
+----
+
+==== Permission Denied
+
+Problem: Binary not executable
+
+Solution: Make it executable:
+
+[source,bash]
+----
+chmod +x build/dpm
+----
+
+=== Getting Help
+
+If you encounter issues:
+
+* Check the xref:commands:help.adoc[Help System]
+* Review xref:security:security-overview.adoc[Security Documentation]
+* Visit our https://github.com/Sunnyday-Software/docker-project-manager[GitHub Repository]
+
+== Next Steps
+
+Now that DPM is installed:
+
+* xref:first-command.adoc[First Command] — Run your first DPM script
+* xref:configuration.adoc[Configuration] — Learn about DPM configuration
+* xref:commands:overview.adoc[Commands] — Explore the full command reference

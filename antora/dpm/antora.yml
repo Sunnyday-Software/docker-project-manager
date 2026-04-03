@@ -1,0 +1,38 @@
+name: dpm
+title: Docker Project Manager
+version: '1.6.2'
+start_page: ROOT:index.adoc
+prerelease: false
+
+asciidoc:
+  attributes:
+    page-description: DPM - Docker Project Manager documentation
+    page-keywords: docker, devops, lisp, s-expression, environment management
+    page-author: Sunnyday Software
+    page-copyright: Sunnyday Software
+    source-language: lisp
+    source-highlighter: highlight.js
+    icons: font
+    sectanchors: true
+    sectlinks: true
+    toc: left
+    toclevels: 3
+
+nav:
+  - modules/ROOT/nav.adoc
+  - modules/intro/nav.adoc
+  - modules/getting-started/nav.adoc
+  - modules/commands/nav.adoc
+  - modules/architecture/nav.adoc
+  - modules/security/nav.adoc
+  - modules/deployment/nav.adoc
+  - modules/development/nav.adoc
+
+ext:
+  collector:
+    run:
+      - command: node scripts/generate-command-docs.js
+        env: {}
+
+urls:
+  html_extension_style: indexify

@@ -1,0 +1,444 @@
+= Testing
+:navtitle: Testing
+:description: How to test DPM
+
+== Overview
+
+DPM uses Rust's built-in testing framework for comprehensive testing.
+
+== Running Tests
+
+=== All Tests
+
+Run all tests:
+
+[source,bash]
+----
+cargo test
+----
+
+=== Specific Test
+
+Run a specific test:
+
+[source,bash]
+----
+cargo test test_name
+----
+
+### With Output
+
+Run tests with output:
+
+[source,bash]
+----
+cargo test -- --nocapture
+----
+
+=== Test Coverage
+
+Generate test coverage:
+
+[source,bash]
+----
+# Install tarpaulin
+cargo install cargo-tarpaulin
+
+# Generate coverage
+cargo tarpaulin --out html
+----
+
+== Unit Tests
+
+=== Test Structure
+
+Organize tests in modules:
+
+[source,rust]
+----
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_my_function() {
+        // Test implementation
+        assert_eq!(my_function(), expected_value);
+    }
+}
+----
+
+=== Example Unit Test
+
+[source,rust]
+----
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_print_command() {
+        let mut registry = CommandRegistry::new();
+        registry.register(PrintCommand);
+        let mut ctx = Context::new(registry);
+
+        let result = evaluate_string("(print \"hello\")", &mut ctx).unwrap();
+        assert_eq!(result, Value::Str("hello".to_string()));
+    }
+
+    #[test]
+    fn test_print_command_multiple_args() {
+        let mut registry = CommandRegistry::new();
+        registry.register(PrintCommand);
+        let mut ctx = Context::new(registry);
+
+        let result = evaluate_string("(print \"hello\" \" \" \"world\")", &mut ctx).unwrap();
+        assert_eq!(result, Value::Str("hello world".to_string()));
+    }
+}
+----
+
+=== Test Assertions
+
+Use appropriate assertions:
+
+[source,rust]
+----
+// Equality
+assert_eq!(result, expected);
+
+// Inequality
+assert_ne!(result, unexpected);
+
+// Boolean
+assert!(condition);
+assert!(!condition);
+
+// Pattern matching
+assert!(matches!(result, Value::Str(_)));
+----
+
+== Integration Tests
+
+=== Test Structure
+
+Integration tests in `tests/` directory:
+
+[source,rust]
+----
+// tests/integration_test.rs
+use docker_project_manager::*;
+
+#[test]
+fn test_full_workflow() {
+    let mut registry = CommandRegistry::new();
+    register_all_commands(&mut registry);
+    let mut ctx = Context::new(registry);
+
+    let script = r#"
+        (rust-env-set "name" "world")
+        (print "hello " (rust-env-var "name"))
+    "#;
+
+    let result = evaluate_string(script, &mut ctx).unwrap();
+    assert_eq!(result, Value::Str("hello world".to_string()));
+}
+----
+
+### Command Integration
+
+Test command integration:
+
+[source,rust]
+----
+#[test]
+fn test_command_chain() {
+    let mut registry = CommandRegistry::new();
+    register_all_commands(&mut registry);
+    let mut ctx = Context::new(registry);
+
+    let script = r#"
+        (rust-env-set "x" "10")
+        (rust-env-set "y" "20")
+        (+ (rust-env-var "x") (rust-env-var "y"))
+    "#;
+
+    let result = evaluate_string(script, &mut ctx).unwrap();
+    assert_eq!(result, Value::Int(30));
+}
+----
+
+== Error Testing
+
+=== Test Error Cases
+
+Test error handling:
+
+[source,rust]
+----
+#[test]
+fn test_unknown_command() {
+    let mut registry = CommandRegistry::new();
+    let mut ctx = Context::new(registry);
+
+    let result = evaluate_string("(unknown-command)", &mut ctx);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_missing_argument() {
+    let mut registry = CommandRegistry::new();
+    registry.register(PrintCommand);
+    let mut ctx = Context::new(registry);
+
+    let result = evaluate_string("(print)", &mut ctx);
+    assert!(result.is_err());
+}
+----
+
+=== Error Message Testing
+
+Test error messages:
+
+[source,rust]
+----
+#[test]
+fn test_error_message() {
+    let mut registry = CommandRegistry::new();
+    let mut ctx = Context::new(registry);
+
+    let result = evaluate_string("(unknown)", &mut ctx);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("Unknown command"));
+}
+----
+
+== Property Testing
+
+=== Property Tests
+
+Use property-based testing:
+
+[source,rust]
+----
+#[cfg(test)]
+mod property_tests {
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn test_add_commutative(a in any::<i64>(), b in any::<i64>()) {
+            let mut registry = CommandRegistry::new();
+            registry.register(SumCommand);
+            let mut ctx = Context::new(registry);
+
+            let script = format!("(+ {} {})", a, b);
+            let result = evaluate_string(&script, &mut ctx).unwrap();
+            
+            assert_eq!(result, Value::Int(a + b));
+        }
+    }
+}
+----
+
+== Benchmarking
+
+=== Benchmarks
+
+Add benchmarks for performance:
+
+[source,rust]
+----
+#[cfg(test)]
+mod benchmarks {
+    use test::Bencher;
+
+    #[bench]
+    fn bench_parse_expression(b: &mut Bencher) {
+        b.iter(|| {
+            parse_string("(+ 1 2 3)")
+        });
+    }
+
+    #[bench]
+    fn bench_evaluate_expression(b: &mut Bencher) {
+        let mut registry = CommandRegistry::new();
+        registry.register(SumCommand);
+        let mut ctx = Context::new(registry);
+
+        b.iter(|| {
+            evaluate_string("(+ 1 2 3)", &mut ctx)
+        });
+    }
+}
+----
+
+=== Run Benchmarks
+
+[source,bash]
+----
+# Run benchmarks
+cargo bench
+
+# Run specific benchmark
+cargo bench bench_parse_expression
+----
+
+== Test Coverage
+
+=== Coverage Tools
+
+Use coverage tools:
+
+[source,bash]
+----
+# Install tarpaulin
+cargo install cargo-tarpaulin
+
+# Generate coverage
+cargo tarpaulin --out html
+
+# Generate coverage report
+cargo tarpaulin --out xml
+----
+
+=== Coverage Goals
+
+Aim for high coverage:
+
+1. **Unit tests**: 90%+ coverage
+2. **Integration tests**: 80%+ coverage
+3. **Error paths**: 100% coverage
+
+== Test Organization
+
+=== Test Modules
+
+Organize tests by feature:
+
+[source,rust]
+----
+#[cfg(test)]
+mod print_tests {
+    // Print command tests
+}
+
+#[cfg(test)]
+mod sum_tests {
+    // Sum command tests
+}
+
+#[cfg(test)]
+mod environment_tests {
+    // Environment command tests
+}
+----
+
+=== Test Helpers
+
+Create test helpers:
+
+[source,rust]
+----
+#[cfg(test)]
+mod test_helpers {
+    use super::*;
+
+    pub fn create_test_context() -> Context {
+        let mut registry = CommandRegistry::new();
+        register_test_commands(&mut registry);
+        Context::new(registry)
+    }
+
+    pub fn register_test_commands(registry: &mut CommandRegistry) {
+        registry.register(PrintCommand);
+        registry.register(SumCommand);
+    }
+}
+----
+
+## Continuous Integration
+
+### CI Testing
+
+Tests run automatically in CI:
+
+[source,yaml]
+----
+# .github/workflows/test.yml
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run tests
+        run: cargo test
+----
+
+### Test Matrix
+
+Test on multiple platforms:
+
+[source,yaml]
+----
+strategy:
+  matrix:
+    os: [ubuntu-latest, macos-latest, windows-latest]
+    rust: [stable, 1.88.0]
+runs-on: ${{ matrix.os }}
+----
+
+## Best Practices
+
+### Test Naming
+
+Use descriptive test names:
+
+[source,rust]
+----
+// Good
+#[test]
+fn test_print_command_concatenates_strings() {}
+
+// Bad
+#[test]
+fn test_print() {}
+----
+
+### Test Isolation
+
+Each test should be independent:
+
+[source,rust]
+----
+#[test]
+fn test_one() {
+    let mut ctx = create_test_context();
+    // Test one
+}
+
+#[test]
+fn test_two() {
+    let mut ctx = create_test_context();  // Fresh context
+    // Test two
+}
+----
+
+### Test Coverage
+
+Test all code paths:
+
+1. **Happy path**: Normal operation
+2. **Error path**: Error handling
+3. **Edge cases**: Boundary conditions
+4. **Integration**: Component interaction
+
+## See Also
+
+* xref:contributing.adoc[Contributing]
+* xref:code-style.adoc[Code Style]
+* xref:architecture:command-system.adoc[Command System]

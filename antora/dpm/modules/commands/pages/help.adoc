@@ -1,0 +1,243 @@
+= Help System
+:navtitle: Help System
+:description: DPM's built-in help system for getting command documentation
+
+== Overview
+
+DPM includes a built-in help system that provides documentation for all available commands.
+
+== help
+
+Displays help information.
+
+=== Syntax
+
+[source,lisp]
+----
+(help)
+(help "command-name")
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `command-name` | (Optional) Specific command to get help for
+|===
+
+=== Return Value
+
+Returns nil.
+
+=== Examples
+
+[source,lisp]
+----
+;; List all commands
+(help)
+
+;; Get help for specific command
+(help "print")
+(help "rust-fs-read-to-string")
+----
+
+== Command Categories
+
+The help system organizes commands by category:
+
+[cols="1,1,3", frame=none]
+|===
+| *Category* | *Prefix* | *Purpose*
+
+| Core | `(print)`, `(+)`, `(*)` | Basic operations, arithmetic, I/O
+| Environment | `(rust-env-*)` | System environment variables
+| Filesystem | `(rust-fs-*)` | File and directory operations
+| Path | `(rust-path-*)` | Cross-platform path manipulation
+| Process | `(rust-process-*)` | Execute system commands
+| Docker | `(docker)` | Docker Compose integration
+|===
+
+== Help Output Format
+
+=== Command List
+
+When called without arguments, help lists all commands:
+
+[source,lisp]
+----
+(help)
+----
+
+Output:
+
+[source]
+----
+Available commands:
+
+Core:
+  print    - Concatenate and print values
+  +        - Sum integers
+  *        - Multiply integers
+  concat   - Concatenate strings
+  debug    - Debug output with masking
+  help     - Display help information
+
+Environment:
+  rust-env-var        - Get environment variable
+  rust-env-current-dir - Get current directory
+  rust-env-home-dir   - Get home directory
+  rust-env-vars       - List all environment variables
+  rust-env-set        - Set environment variable
+
+Filesystem:
+  rust-fs-read-to-string - Read file contents
+  rust-fs-write          - Write to file
+  rust-fs-create-dir     - Create directory
+  rust-fs-copy           - Copy file
+
+Path:
+  rust-path-join     - Join path components
+  rust-path-parent   - Get parent directory
+  rust-path-filename - Get filename
+  rust-path-extension - Get file extension
+  rust-path-exists   - Check if path exists
+  rust-path-is-dir   - Check if directory
+  rust-path-is-file  - Check if file
+
+Process:
+  rust-process-command - Execute command
+  rust-process-output  - Capture command output
+
+Docker:
+  docker - Docker Compose integration
+----
+
+=== Command Details
+
+When called with a command name, help shows detailed information:
+
+[source,lisp]
+----
+(help "print")
+----
+
+Output:
+
+[source]
+----
+print - Concatenate and print values
+
+Syntax: (print arg1 arg2 ...)
+
+Parameters:
+  arg1, arg2, ... - Values to concatenate (strings, numbers auto-converted)
+
+Returns: Concatenated string
+
+Examples:
+  (print "Hello" " " "World")  ; => "Hello World"
+  (print 42)                   ; => "42"
+  (print "The answer is " (+ 20 22))  ; => "The answer is 42"
+----
+
+== Using Help in Scripts
+
+=== Getting Command Syntax
+
+[source,lisp]
+----
+;; Check command syntax before using
+(help "rust-fs-read-to-string")
+
+;; Now use the command
+(rust-fs-read-to-string "config.txt")
+----
+
+=== Discovering Commands
+
+[source,lisp]
+----
+;; List all commands
+(help)
+
+;; Find specific functionality
+(help "docker")
+----
+
+== Command Metadata
+
+Each command includes metadata:
+
+[cols="1,3", frame=none]
+|===
+| *Metadata* | *Description*
+
+| Name | Command name
+| Description | What the command does
+| Syntax | How to call the command
+| Parameters | What arguments it accepts
+| Return Value | What it returns
+| Examples | Usage examples
+|===
+
+== Future Enhancements
+
+=== Search Functionality
+
+Future versions may include:
+
+[source,lisp]
+----
+;; Search commands by keyword
+(help-search "file")  ; => Lists all file-related commands
+----
+
+=== Interactive Help
+
+Future versions may include:
+
+[source,lisp]
+----
+;; Interactive help mode
+(help-interactive)
+----
+
+== Best Practices
+
+=== Before Using Commands
+
+Always check help for unfamiliar commands:
+
+[source,lisp]
+----
+;; Check before using
+(help "rust-fs-read-to-string")
+
+;; Use the command
+(rust-fs-read-to-string "file.txt")
+----
+
+=== Script Documentation
+
+Include help calls in scripts for documentation:
+
+[source,lisp]
+----
+; This script sets up Docker environment
+; Use: dpm --file docker-setup.lisp
+
+; Get help for docker command
+(help "docker")
+
+; Set up environment
+(rust-env-set "PROJECT_NAME" (rust-path-filename (rust-env-current-dir)))
+(docker "compose" "up" "-d")
+----
+
+== See Also
+
+* xref:overview.adoc[Command Overview]
+* xref:core-commands.adoc[Core Commands]
+* xref:environment-commands.adoc[Environment Commands]

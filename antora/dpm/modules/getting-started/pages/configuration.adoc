@@ -1,0 +1,213 @@
+= Configuration
+:navtitle: Configuration
+:description: Learn about DPM configuration options
+
+== Overview
+
+DPM can be configured through environment variables and command-line options.
+
+== Command-Line Options
+
+DPM supports three execution modes:
+
+=== Pipe Mode
+
+Read S-expressions from standard input:
+
+[source,bash]
+----
+echo '(print "Hello")' | dpm --pipe
+----
+
+=== Command Mode
+
+Execute a single S-expression:
+
+[source,bash]
+----
+dpm --command '(print "Hello")'
+----
+
+=== File Mode
+
+Run a script file:
+
+[source,bash]
+----
+dpm --file script.lisp
+----
+
+== Environment Variables
+
+DPM respects several environment variables:
+
+=== DPM-Specific Variables
+
+[cols="1,2", frame=none]
+|===
+| *Variable* | *Description*
+
+| `DPM_DEBUG`
+| Enable debug output (set to `1`)
+
+| `DPM_QUIET`
+| Suppress informational output (set to `1`)
+
+| `DPM_CONFIG_PATH`
+| Custom configuration file path
+|===
+
+=== Docker Variables
+
+DPM automatically handles Docker-related variables:
+
+[cols="1,2", frame=none]
+|===
+| *Variable* | *Description*
+
+| `DOCKER_HOST`
+| Docker daemon socket (auto-detected)
+
+| `DOCKER_BUILDKIT`
+| Enable BuildKit (set to `1`)
+
+| `COMPOSE_PROJECT_NAME`
+| Docker Compose project name
+|===
+
+== Docker Socket Detection
+
+DPM automatically detects Docker socket locations:
+
+=== Linux
+
+1. `/var/run/docker.sock` (standard)
+2. `$XDG_RUNTIME_DIR/docker.sock` (XDG compliant)
+
+=== macOS
+
+1. `~/.docker/desktop/docker.sock` (Docker Desktop)
+2. `/var/run/docker.sock` (if available)
+
+=== Windows
+
+1. `//var/run/docker.sock` (Docker Desktop WSL2)
+
+== Script Files
+
+DPM script files use the `.lisp` extension and support:
+
+=== Comments
+
+Use `;` for comments:
+
+[source,lisp]
+----
+; This is a comment
+(print "Hello")  ; Inline comment
+----
+
+=== Multi-line Scripts
+
+S-expressions can span multiple lines:
+
+[source,lisp]
+----
+(print
+  "Hello"
+  " "
+  "World")
+----
+
+=== Variable Storage
+
+Store values in the execution context:
+
+[source,lisp]
+----
+;; Store a value
+(rust-env-set "MY_VAR" "Hello")
+
+;; Retrieve it later
+(print (rust-env-var "MY_VAR"))
+----
+
+== Configuration File (Future Feature)
+
+Future versions will support a configuration file for persistent settings.
+
+== Error Handling
+
+DPM provides clear error messages:
+
+[source]
+----
+Error: Unknown command: unknown-command
+Available commands: print, +, *, rust-env-var, ...
+----
+
+== Debug Mode
+
+Enable debug mode to see execution details:
+
+[source,bash]
+----
+DPM_DEBUG=1 dpm --command '(+ 1 2 3)'
+----
+
+Output:
+
+[source]
+----
+Debug: Evaluating (+ 1 2 3)
+Debug: Command '+' with args [1, 2, 3]
+Debug: Result: 6
+6
+----
+
+=== Sensitive Data Masking
+
+In debug mode, sensitive data is automatically masked:
+
+[source,bash]
+----
+DPM_DEBUG=1 dpm --command '(rust-env-set "password" "secret123")'
+----
+
+Output:
+
+[source]
+----
+Debug: Setting password = ******
+----
+
+== Best Practices
+
+=== Script Organization
+
+1. Use descriptive filenames: `docker-setup.lisp`, `env-config.lisp`
+2. Add comments for complex logic
+3. Group related commands together
+4. Use variables for reusable values
+
+=== Security
+
+1. Never hardcode sensitive data
+2. Use `(rust-fs-read-to-string "/secrets/...")` for secrets
+3. Leverage DPM's automatic masking
+4. Review debug output before sharing
+
+=== Performance
+
+1. Minimize process executions
+2. Cache values in variables
+3. Use built-in commands when possible
+4. Avoid unnecessary file I/O
+
+== Next Steps
+
+Now that you understand configuration:
+
+* xref:commands:overview.adoc[Commands] — Explore the full command reference
+* xref:architecture:lisp-interpreter.adoc[Lisp Interpreter] — Learn about the interpreter
+* xref:intro:use-cases.adoc[Use Cases] — See real-world examples

@@ -1,0 +1,374 @@
+= Security Best Practices
+:navtitle: Best Practices
+:description: Security best practices for DPM users
+
+== Overview
+
+Follow these best practices to maximize security when using DPM.
+
+== Sensitive Data Management
+
+=== Never Hardcode Secrets
+
+❌ Bad:
+
+[source,lisp]
+----
+(rust-env-set "DATABASE_PASSWORD" "mysecretpassword")
+----
+
+✅ Good:
+
+[source,lisp]
+----
+(rust-env-set "DATABASE_PASSWORD" (rust-fs-read-to-string "/secrets/db_password"))
+----
+
+=== Use Secure Storage
+
+Store secrets securely:
+
+[cols="1,2", frame=none]
+|===
+| *Method* | *Example*
+
+| Secret files | `(rust-fs-read-to-string "/secrets/...")`
+| Environment variables | `(rust-env-var "SECRET")`
+| Docker secrets | `(rust-fs-read-to-string "/run/secrets/...")`
+|===
+
+=== Automatic Masking
+
+DPM automatically masks sensitive data:
+
+[source,lisp]
+----
+;; These are automatically masked in debug output
+(rust-env-set "password" "secret123")      ; => ******
+(rust-env-set "api_key" "abc123")          ; => ******
+(rust-env-set "token" "jwt-token")         ; => ******
+----
+
+=== Debug Output
+
+Be careful with debug output:
+
+[source,bash]
+----
+# Dangerous: debug may leak secrets
+DPM_DEBUG=1 dpm --command '(rust-env-var "DATABASE_PASSWORD")'
+
+# Better: use non-sensitive variables
+DPM_DEBUG=1 dpm --command '(rust-env-var "PROJECT_NAME")'
+----
+
+== File System Security
+
+=== Path Validation
+
+Validate file paths:
+
+❌ Bad:
+
+[source,lisp]
+----
+(rust-fs-read-to-string user_input)  ; User can escape directory
+----
+
+✅ Good:
+
+[source,lisp]
+----
+(rust-fs-read-to-string (rust-path-join safe_directory user_input))
+----
+
+=== Permission Checks
+
+Check file permissions:
+
+[source,lisp]
+----
+;; Check if file is readable
+(if (rust-path-exists "config.json")
+  (rust-fs-read-to-string "config.json")
+  (print "Config not found"))
+----
+
+=== Avoid Sensitive Files
+
+Never access sensitive files directly:
+
+❌ Bad:
+
+[source,lisp]
+----
+(rust-fs-read-to-string "/etc/shadow")  ; Dangerous!
+----
+
+✅ Good:
+
+[source,lisp]
+----
+(rust-fs-read-to-string "/etc/hostname")  ; Safe
+----
+
+== Environment Security
+
+=== Minimal Environment
+
+Set only necessary environment variables:
+
+❌ Bad:
+
+[source,lisp]
+----
+(rust-env-set "DATABASE_PASSWORD" password)
+(rust-env-set "API_KEY" api_key)
+(rust-env-set "DEBUG" "true")
+(rust-env-set "LOG_LEVEL" "debug")
+----
+
+✅ Good:
+
+[source,lisp]
+----
+(rust-env-set "DATABASE_PASSWORD" password)  ; Only what's needed
+----
+
+### Environment Isolation
+
+Use separate environments:
+
+[source,lisp]
+----
+;; Development environment
+(rust-env-set "NODE_ENV" "development")
+(rust-env-set "LOG_LEVEL" "debug")
+
+;; Production environment
+(rust-env-set "NODE_ENV" "production")
+(rust-env-set "LOG_LEVEL" "error")
+----
+
+== Process Execution Security
+
+=== Command Validation
+
+Validate commands before execution:
+
+❌ Bad:
+
+[source,lisp]
+----
+(rust-process-command user_input)  ; User can run any command
+----
+
+✅ Good:
+
+[source,lisp]
+----
+(if (= user_input "safe-command")
+  (rust-process-command "safe-command")
+  (print "Invalid command"))
+----
+
+### Argument Validation
+
+Validate command arguments:
+
+[source,lisp]
+----
+;; Validate path before using
+(if (rust-path-exists user_path)
+  (rust-process-command "ls" user_path)
+  (print "Invalid path"))
+----
+
+=== Avoid Shell Injection
+
+Be careful with command arguments:
+
+❌ Bad:
+
+[source,lisp]
+----
+(rust-process-output "echo" user_input)  ; User can inject commands
+----
+
+✅ Good:
+
+[source,lisp]
+----
+;; Use DPM's print command instead
+(print user_input)
+----
+
+== Docker Security
+
+### Socket Permissions
+
+Check Docker socket permissions:
+
+[source,lisp]
+----
+;; DPM handles socket detection automatically
+(docker "compose" "up" "-d")  ; Uses correct socket
+----
+
+### Container Security
+
+Follow container security best practices:
+
+1. **Minimal images**: Use minimal base images
+2. **Non-root users**: Run as non-root
+3. **Read-only filesystem**: Mount read-only where possible
+4. **Security options**: Use Docker security options
+
+### Network Security
+
+Secure Docker networks:
+
+[source,lisp]
+----
+;; Use internal networks
+(docker "compose" "up" "-d")
+
+;; Check exposed ports
+(docker "compose" "ps")
+----
+
+## Script Security
+
+### Script Validation
+
+Validate scripts before execution:
+
+[source,bash]
+----
+# Check script syntax
+dpm --file script.lisp
+
+# Run in debug mode
+DPM_DEBUG=1 dpm --file script.lisp
+----
+
+### Script Permissions
+
+Set appropriate script permissions:
+
+[source,bash]
+----
+# Make script executable
+chmod +x script.lisp
+
+# Set secure permissions
+chmod 700 script.lisp
+----
+
+### Script Storage
+
+Store scripts securely:
+
+1. **Version control**: Store in Git
+2. **Access control**: Limit write access
+3. **Audit logging**: Track changes
+
+## CI/CD Security
+
+### Pipeline Security
+
+Secure CI/CD pipelines:
+
+1. **Secret management**: Use CI secrets
+2. **Minimal permissions**: Least privilege
+3. **Audit logging**: Track all actions
+4. **Verification**: Verify builds
+
+### GitHub Actions Security
+
+Secure GitHub Actions:
+
+[source,yaml]
+----
+# .github/workflows/security.yml
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Security Audit
+        run: cargo deny check
+      
+      - name: Clippy
+        run: cargo clippy -- -D warnings
+      
+      - name: Tests
+        run: cargo test
+----
+
+## Monitoring and Auditing
+
+### Audit Logging
+
+Enable audit logging:
+
+[source,bash]
+----
+# Debug mode with logging
+DPM_DEBUG=1 dpm --file script.lisp
+
+# Save logs
+DPM_DEBUG=1 dpm --file script.lisp > audit.log
+----
+
+### Security Monitoring
+
+Monitor security:
+
+1. **GitHub Security tab**: Monitor alerts
+2. **Dependabot**: Monitor updates
+3. **Logs**: Review logs regularly
+
+### Incident Response
+
+Respond to security incidents:
+
+1. **Detection**: Detect incidents
+2. **Containment**: Contain impact
+3. **Investigation**: Investigate cause
+4. **Remediation**: Fix issue
+5. **Recovery**: Restore service
+
+## Compliance
+
+### Standards Compliance
+
+DPM follows security standards:
+
+1. **OWASP**: Web application security
+2. **CWE**: Common Weakness Enumeration
+3. **NIST**: Cybersecurity framework
+
+### Regular Audits
+
+Conduct regular security audits:
+
+1. **Dependency audit**: `cargo deny check`
+2. **Code audit**: Code review
+3. **Configuration audit**: Review configuration
+4. **Access audit**: Review access
+
+## See Also
+
+* xref:security-overview.adoc[Security Overview]
+* xref:supply-chain.adoc[Supply Chain Security]
+* xref:commands:overview.adoc[Command Reference]

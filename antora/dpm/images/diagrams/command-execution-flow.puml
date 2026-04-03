@@ -1,0 +1,32 @@
+@startuml command-execution-flow
+!theme cerulean
+
+actor User
+participant "CLI" as cli
+participant "Parser" as parser
+participant "Registry" as registry
+participant "Command" as cmd
+participant "Context" as ctx
+
+User -> cli : dpm --command "(+ 1 2 3)"
+cli -> parser : parse_string_normalized()
+parser -> parser : Remove comments
+parser -> parser : Balance parentheses
+parser -> parser : lexpr::from_str()
+
+alt Parse Success
+  parser --> cli : AST nodes
+  cli -> parser : evaluate()
+  parser -> registry : get("sum")
+  registry --> parser : SumCommand
+  parser -> cmd : execute([1,2,3], ctx)
+  cmd -> cmd : Sum calculation
+  cmd --> parser : Value::Int(6)
+  parser --> cli : Result
+  cli --> User : 6
+else Parse Error
+  parser --> cli : Err(message)
+  cli --> User : Error: ...
+end
+
+@enduml
