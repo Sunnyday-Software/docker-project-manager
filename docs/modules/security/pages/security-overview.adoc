@@ -8,63 +8,12 @@ DPM is designed with security-first principles for DevOps workflows.
 
 [plantuml, security-layers, svg]
 ----
-@startuml
-!theme cerulean
-
-skinparam package {
-  BackgroundColor<<layer>> #E8F5E9
-}
-
-package "Supply Chain Security" <<layer>> {
-  [cargo-deny]
-  [GitHub Dependency Graph]
-  [Renovate Bot]
-}
-
-package "Runtime Security" <<layer>> {
-  [Sensitive Data Masking]
-  [Environment Isolation]
-  [Socket Permission Checks]
-}
-
-package "Build Security" <<layer>> {
-  [GitHub Actions]
-  [Reproducible Builds]
-  [Binary Signing]
-}
-
-[cargo-deny] --> [Runtime Security]
-[GitHub Actions] --> [Build Security]
-
-@enduml
+include::attachment$security-layers.puml[]
 ----
 
 == Security Principles
 
-=== Defense in Depth
-
-Multiple layers of security:
-
-1. **Supply chain**: Secure dependencies
-2. **Build**: Reproducible, auditable builds
-3. **Runtime**: Secure execution environment
-4. **Data**: Sensitive data protection
-
-=== Least Privilege
-
-DPM follows least privilege principles:
-
-1. **Minimal permissions**: Only necessary access
-2. **Sandboxed execution**: Limited system access
-3. **Explicit grants**: No implicit permissions
-
-=== Transparency
-
-All security measures are transparent:
-
-1. **Open source**: Full code visibility
-2. **Dependency tracking**: Complete SBOM
-3. **Audit trail**: Full activity logging
+include::partial$security-principles.adoc[]
 
 == Supply Chain Security
 

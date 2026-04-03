@@ -1,0 +1,29 @@
+@startuml security-layers
+!theme cerulean
+
+skinparam package {
+  BackgroundColor<<layer>> #E8F5E9
+}
+
+package "Supply Chain Security" <<layer>> {
+  [cargo-deny]
+  [GitHub Dependency Graph]
+  [Renovate Bot]
+}
+
+package "Runtime Security" <<layer>> {
+  [Sensitive Data Masking]
+  [Environment Isolation]
+  [Socket Permission Checks]
+}
+
+package "Build Security" <<layer>> {
+  [GitHub Actions]
+  [Reproducible Builds]
+  [Binary Signing]
+}
+
+[cargo-deny] --> [Runtime Security]
+[GitHub Actions] --> [Build Security]
+
+@enduml

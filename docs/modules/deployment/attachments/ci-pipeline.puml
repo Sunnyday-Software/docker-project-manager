@@ -1,0 +1,29 @@
+@startuml ci-pipeline
+!theme cerulean
+
+start
+:Commit Push;
+:Commit Validation;
+if (Conventional Commit?) then (no)
+  :Reject;
+  stop
+endif
+:Security Audit;
+if (CVEs Found?) then (yes)
+  :Block Merge;
+  stop
+endif
+:License Check;
+if (Forbidden License?) then (yes)
+  :Block Merge;
+  stop
+endif
+:Build & Test;
+if (Tests Pass?) then (no)
+  :Block Merge;
+  stop
+endif
+:Release;
+stop
+
+@enduml

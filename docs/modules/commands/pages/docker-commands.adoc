@@ -57,17 +57,7 @@ DPM automatically sets up Docker environment:
 
 === Docker Socket Detection
 
-DPM detects Docker socket location:
-
-[cols="1,1", options="header"]
-|===
-| Platform | Socket Path
-
-| Linux (standard) | `/var/run/docker.sock`
-| Linux (XDG) | `$XDG_RUNTIME_DIR/docker.sock`
-| macOS (Docker Desktop) | `~/.docker/desktop/docker.sock`
-| Windows (Docker Desktop) | `//var/run/docker.sock`
-|===
+include::partial$docker-socket-detection.adoc[]
 
 === Environment Variables
 

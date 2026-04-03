@@ -8,17 +8,7 @@ DPM uses S-expression syntax: `(command arg1 arg2 ...)`
 
 == Command Categories
 
-[cols="1,1,3", frame=none]
-|===
-| *Category* | *Prefix* | *Purpose*
-
-| Core | `(print)`, `(+)`, `(*)` | Basic operations, arithmetic, I/O
-| Environment | `(rust-env-*)` | System environment variables
-| Filesystem | `(rust-fs-*)` | File and directory operations
-| Path | `(rust-path-*)` | Cross-platform path manipulation
-| Process | `(rust-process-*)` | Execute system commands
-| Docker | `(docker)` | Docker Compose integration
-|===
+include::partial$command-categories.adoc[]
 
 == Getting Help
 

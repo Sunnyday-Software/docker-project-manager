@@ -8,36 +8,7 @@ DPM's command system is designed for extensibility through a trait-based archite
 
 [plantuml, command-system, svg]
 ----
-@startuml
-!theme cerulean
-
-interface Command {
-  +execute(args: Vec<Value>, ctx: &mut Context) -> Result<Value, String>
-  +name() -> &'static str
-  +description() -> &'static str
-  +syntax() -> &'static str
-  +examples() -> &'static str
-}
-
-class CommandRegistry {
-  -commands: HashMap<String, Box<dyn Command>>
-  +register(cmd: impl Command)
-  +get(name: &str) -> Option<&dyn Command>
-  +execute(name: &str, args: Vec<Value>, ctx: &mut Context) -> Result<Value, String>
-}
-
-class ClosureCommand {
-  -name: String
-  -description: String
-  -syntax: String
-  -examples: String
-  -function: Box<dyn Fn(Vec<Value>, &mut Context) -> Result<Value, String>>
-}
-
-Command <|.. ClosureCommand
-CommandRegistry o-- "many" Command
-
-@enduml
+include::attachment$command-system.puml[]
 ----
 
 == Command Trait

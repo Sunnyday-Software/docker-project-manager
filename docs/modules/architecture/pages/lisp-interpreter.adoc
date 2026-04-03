@@ -8,41 +8,7 @@ DPM's core is a custom Lisp interpreter built on the `lexpr` crate. It provides 
 
 [plantuml, architecture-overview, svg]
 ----
-@startuml
-!theme cerulean
-
-package "CLI Layer" {
-  [main.rs]
-  [Argument Parser]
-}
-
-package "Lisp Interpreter" {
-  [Parser]
-  [AST Evaluator]
-  [Value System]
-}
-
-package "Command System" {
-  [CommandRegistry]
-  [Command Trait]
-  [Closure Commands]
-}
-
-package "Context" {
-  [Variables]
-  [Versions]
-  [Debug State]
-}
-
-[main.rs] --> [Argument Parser]
-[Argument Parser] --> [Parser]
-[Parser] --> [AST Evaluator]
-[AST Evaluator] --> [CommandRegistry]
-[AST Evaluator] --> [Value System]
-[CommandRegistry] --> [Command Trait]
-[AST Evaluator] --> [Context]
-
-@enduml
+include::attachment$architecture-overview.puml[]
 ----
 
 == Value System
@@ -62,16 +28,7 @@ pub enum Value {
 
 === Value Types
 
-[cols="1,1,3", options="header"]
-|===
-| Type | Example | Description
-
-| Integer | `42` | Whole numbers
-| String | `"hello"` | Text data
-| Boolean | `true`, `false` | True/false values
-| List | `(1 2 3)` | Ordered collections
-| Nil | `nil` | Null/void value
-|===
+include::partial$value-types.adoc[]
 
 == Parsing
 
