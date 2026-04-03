@@ -1,0 +1,374 @@
+= Building DPM
+:navtitle: Building
+:description: How to build DPM from source
+
+== Prerequisites
+
+=== Rust
+
+DPM requires Rust 1.88.0 or later:
+
+[source,bash]
+----
+# Install Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Verify installation
+rustc --version
+cargo --version
+----
+
+=== Platform-Specific Requirements
+
+[cols="1,1,3", options="header"]
+|===
+| Platform | Requirement | Installation
+
+| Linux | Build tools | `sudo apt-get install build-essential`
+| macOS | Xcode CLI | `xcode-select --install`
+| Windows | MSVC | Visual Studio Build Tools
+|===
+
+=== Optional Dependencies
+
+[cols="1,1,2", options="header"]
+|===
+| Dependency | Required | Purpose
+
+| Docker | No | Docker commands
+| Git | Yes | Version control
+| OpenSSL | Yes | TLS support
+|===
+
+== Building
+
+=== Standard Build
+
+Build for your current platform:
+
+[source,bash]
+----
+# Clone repository
+git clone https://github.com/Sunnyday-Software/docker-project-manager.git
+cd docker-project-manager
+
+# Build release
+cargo build --release
+
+# Run binary
+./target/release/dpm
+----
+
+=== Development Build
+
+Build for development:
+
+[source,bash]
+----
+# Debug build (faster)
+cargo build
+
+# Run debug binary
+./target/debug/dpm
+
+# Run tests
+cargo test
+----
+
+=== Linux Build
+
+Build for Linux:
+
+[source,bash]
+----
+# Make build script executable
+chmod +x build-linux.sh
+
+# Run build script
+./build-linux.sh
+
+# Output in build/ directory
+ls -la build/
+----
+
+The Linux build script:
+
+1. Detects Linux distribution
+2. Builds musl (static) binary
+3. Builds system-specific binary
+4. Creates binaries in `build/` directory
+
+=== macOS Build
+
+Build for macOS:
+
+[source,bash]
+----
+# Make build script executable
+chmod +x build-macos.sh
+
+# Run build script
+./build-macos.sh
+
+# Output in build/ directory
+ls -la build/
+----
+
+The macOS build script:
+
+1. Builds for Intel (x86_64)
+2. Builds for ARM64 (Apple Silicon)
+3. Creates universal binary
+4. Creates binaries in `build/` directory
+
+=== Windows Build
+
+Build for Windows:
+
+[source,cmd]
+----
+# Run build script
+build-windows.bat
+
+# Output in build\ directory
+dir build\
+----
+
+The Windows build script:
+
+1. Builds for Windows x86_64
+2. Uses GNU toolchain
+3. Creates `.exe` binary
+4. Creates binaries in `build\` directory
+
+== Cross-Compilation
+
+=== Linux Cross-Compilation
+
+Cross-compile for different Linux architectures:
+
+[source,bash]
+----
+# Install cross-compilation tools
+rustup target add x86_64-unknown-linux-musl
+rustup target add aarch64-unknown-linux-gnu
+
+# Build for x86_64 musl
+cargo build --release --target x86_64-unknown-linux-musl
+
+# Build for ARM64
+cargo build --release --target aarch64-unknown-linux-gnu
+----
+
+=== macOS Cross-Compilation
+
+Cross-compile for macOS:
+
+[source,bash]
+----
+# Install targets
+rustup target add x86_64-apple-darwin
+rustup target add aarch64-apple-darwin
+
+# Build for Intel
+cargo build --release --target x86_64-apple-darwin
+
+# Build for ARM64
+cargo build --release --target aarch64-apple-darwin
+----
+
+=== Windows Cross-Compilation
+
+Cross-compile for Windows from Linux:
+
+[source,bash]
+----
+# Install cross-compilation tools
+rustup target add x86_64-pc-windows-gnu
+
+# Install mingw-w64
+sudo apt-get install gcc-mingw-w64-x86-64
+
+# Build for Windows
+cargo build --release --target x86_64-pc-windows-gnu
+----
+
+== Build Configuration
+
+=== Cargo Configuration
+
+Build configuration in `Cargo.toml`:
+
+[source,toml]
+----
+[package]
+name = "docker-project-manager"
+version = "1.6.2"
+edition = "2021"
+rust-version = "1.88.0"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+----
+
+=== Build Profiles
+
+[cols="1,1,3", options="header"]
+|===
+| Profile | Speed | Size
+
+| debug | Fast compile | Large binary
+| release | Slow compile | Small binary
+|===
+
+=== Optimization Flags
+
+Release profile optimizations:
+
+1. **opt-level = 3**: Maximum optimization
+2. **lto = true**: Link-time optimization
+3. **codegen-units = 1**: Single codegen unit
+4. **strip = true**: Strip debug symbols
+
+== Build Scripts
+
+=== Linux Build Script
+
+[source,bash]
+----
+#!/bin/bash
+set -e
+
+# Detect distribution
+DISTRO=$(lsb_release -si 2>/dev/null || echo "Unknown")
+
+# Build musl binary
+cargo build --release --target x86_64-unknown-linux-musl
+
+# Build system binary
+cargo build --release
+
+# Create build directory
+mkdir -p build
+
+# Copy binaries
+cp target/x86_64-unknown-linux-musl/release/dpm build/dpm-musl
+cp target/release/dpm build/dpm
+
+echo "Build complete: build/dpm"
+----
+
+=== macOS Build Script
+
+[source,bash]
+----
+#!/bin/bash
+set -e
+
+# Build for Intel
+cargo build --release --target x86_64-apple-darwin
+
+# Build for ARM64
+cargo build --release --target aarch64-apple-darwin
+
+# Create build directory
+mkdir -p build
+
+# Copy binaries
+cp target/x86_64-apple-darwin/release/dpm build/dpm-x86_64
+cp target/aarch64-apple-darwin/release/dpm build/dpm-arm64
+
+# Create universal binary
+lipo -create -output build/dpm build/dpm-x86_64 build/dpm-arm64
+
+echo "Build complete: build/dpm"
+----
+
+=== Windows Build Script
+
+[source,cmd]
+----
+@echo off
+setlocal
+
+REM Build for Windows
+cargo build --release
+
+REM Create build directory
+if not exist build mkdir build
+
+REM Copy binary
+copy target\release\dpm.exe build\dpm.exe
+
+echo Build complete: build\dpm.exe
+----
+
+== Troubleshooting
+
+=== Common Build Issues
+
+==== Missing Dependencies
+
+Problem: Build fails with missing dependencies
+
+Solution: Install required packages:
+
+[source,bash]
+----
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install build-essential pkg-config libssl-dev
+
+# Fedora/RHEL
+sudo dnf groupinstall "Development Tools"
+sudo dnf install openssl-devel
+
+# macOS
+xcode-select --install
+----
+
+==== OpenSSL Errors
+
+Problem: OpenSSL not found
+
+Solution: Install OpenSSL development files:
+
+[source,bash]
+----
+# Ubuntu/Debian
+sudo apt-get install libssl-dev
+
+# Fedora/RHEL
+sudo dnf install openssl-devel
+
+# macOS
+brew install openssl
+----
+
+==== Cross-Compilation Errors
+
+Problem: Cross-compilation fails
+
+Solution: Install target and toolchain:
+
+[source,bash]
+----
+# Add target
+rustup target add <target>
+
+# Install cross-compilation tools
+# For Linux ARM64
+sudo apt-get install gcc-aarch64-linux-gnu
+
+# For Windows from Linux
+sudo apt-get install gcc-mingw-w64-x86-64
+----
+
+== See Also
+
+* xref:cross-platform.adoc[Cross-Platform]
+* xref:ci-cd.adoc[CI/CD]
+* xref:getting-started:installation.adoc[Installation]

@@ -1,0 +1,10 @@
+= Command Reference
+:navtitle: Commands
+
+* xref:overview.adoc[Overview]
+* xref:core-commands.adoc[Core Commands]
+* xref:environment-commands.adoc[Environment Commands]
+* xref:filesystem-commands.adoc[Filesystem Commands]
+* xref:path-commands.adoc[Path Commands]
+* xref:process-commands.adoc[Process Commands]
+* xref:docker-commands.adoc[Docker Commands]

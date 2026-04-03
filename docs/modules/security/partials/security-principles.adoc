@@ -1,0 +1,33 @@
+// Security Principles
+// This partial describes DPM's security principles
+// Usage: include::partial$security-principles.adoc[]
+
+=== Security Principles
+
+DPM follows these security principles:
+
+==== Defense in Depth
+
+Multiple layers of security provide comprehensive protection:
+
+1. **Supply chain security**: Secure dependencies with `cargo-deny`
+2. **Build security**: Reproducible, auditable builds
+3. **Runtime security**: Secure execution environment
+4. **Data security**: Sensitive data protection
+
+==== Least Privilege
+
+DPM follows least privilege principles:
+
+1. **Minimal permissions**: Only necessary system access
+2. **Sandboxed execution**: Limited command capabilities
+3. **Explicit grants**: No implicit permissions
+
+==== Transparency
+
+All security measures are transparent:
+
+1. **Open source**: Full code visibility
+2. **Dependency tracking**: Complete Software Bill of Materials (SBOM)
+3. **Audit trail**: Full activity logging
+4. **Security advisories**: Public vulnerability reports

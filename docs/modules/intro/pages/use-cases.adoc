@@ -1,0 +1,219 @@
+= Use Cases
+:navtitle: Use Cases
+:description: Real-world examples of how DPM solves Docker environment management challenges
+
+== Development Workflows
+
+=== Web Application Development
+
+==== Before DPM
+
+Each developer has their own way to start the development environment:
+
+[source,bash]
+----
+# Developer on Linux
+export NODE_ENV=development
+export DATABASE_URL=postgres://localhost:5432/myapp
+export REDIS_URL=redis://localhost:6379
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
+# Developer on macOS (different commands!)
+export NODE_ENV=development
+export DATABASE_URL=postgres://docker.for.mac.localhost:5432/myapp
+export REDIS_URL=redis://docker.for.mac.localhost:6379
+docker compose up -d
+
+# Developer on Windows (yet another approach)
+set NODE_ENV=development
+set DATABASE_URL=postgres://localhost:5432/myapp
+set REDIS_URL=redis://localhost:6379
+docker compose up -d
+----
+
+==== After DPM
+
+One script works everywhere:
+
+[source,lisp]
+----
+;; Set common environment
+(rust-env-set "NODE_ENV" "development")
+(rust-env-set "DATABASE_URL" (concat "postgres://" (rust-env-var "DB_HOST" "localhost") ":5432/myapp"))
+(rust-env-set "REDIS_URL" (concat "redis://" (rust-env-var "REDIS_HOST" "localhost") ":6379"))
+
+;; Start services
+(docker "compose" "up" "-d")
+----
+
+=== Docker Compose Projects
+
+==== Multi-Service Setup
+
+DPM excels at managing complex multi-service applications:
+
+[source,lisp]
+----
+;; Project configuration
+(rust-env-set "PROJECT_NAME" (rust-path-filename (rust-env-current-dir)))
+(rust-env-set "COMPOSE_PROJECT_NAME" (rust-env-var "PROJECT_NAME"))
+
+;; Database setup
+(rust-env-set "POSTGRES_DB" (concat (rust-env-var "PROJECT_NAME") "_db"))
+(rust-env-set "POSTGRES_USER" (rust-env-var "PROJECT_NAME"))
+(rust-env-set "POSTGRES_PASSWORD" (rust-process-output "openssl" "rand" "-base64" "32"))
+
+;; Application environment
+(rust-env-set "APP_ENV" "development")
+(rust-env-set "APP_DEBUG" "true")
+
+;; Start everything
+(docker "compose" "up" "-d")
+----
+
+==== CI/CD Integration
+
+DPM works seamlessly in CI/CD pipelines:
+
+[source,lisp]
+----
+;; In your CI script
+(rust-env-set "CI" "true")
+(rust-env-set "GITHUB_TOKEN" (rust-env-var "GITHUB_TOKEN"))
+(rust-env-set "DOCKER_BUILDKIT" "1")
+
+;; Build and test
+(docker "compose" "build")
+(docker "compose" "run" "--rm" "app" "test")
+(docker "compose" "down")
+----
+
+=== Environment Management
+
+==== Development vs Production
+
+Maintain separate configurations easily:
+
+[source,lisp]
+----
+;; development.lisp
+(rust-env-set "NODE_ENV" "development")
+(rust-env-set "LOG_LEVEL" "debug")
+(rust-env-set "CACHE_TTL" "0")
+----
+
+[source,lisp]
+----
+;; production.lisp
+(rust-env-set "NODE_ENV" "production")
+(rust-env-set "LOG_LEVEL" "error")
+(rust-env-set "CACHE_TTL" "3600")
+----
+
+==== Team Onboarding
+
+New developers get started quickly:
+
+[source,bash]
+----
+# One command to set up everything
+dpm --file setup.lisp
+
+# setup.lisp contains all environment setup
+(rust-env-set "PROJECT_NAME" (rust-path-filename (rust-env-current-dir)))
+(rust-env-set "HOST_UID" (rust-process-output "id" "-u"))
+(rust-env-set "HOST_GID" (rust-process-output "id" "-g"))
+(docker "compose" "up" "-d")
+----
+
+=== Security Use Cases
+
+==== Sensitive Data Management
+
+DPM automatically masks sensitive data in debug output:
+
+[source,lisp]
+----
+;; These are automatically masked in debug output
+(rust-env-set "DATABASE_PASSWORD" (rust-fs-read-to-string "/secrets/db_password"))
+(rust-env-set "API_KEY" (rust-fs-read-to-string "/secrets/api_key"))
+(rust-env-set "JWT_SECRET" (rust-fs-read-to-string "/secrets/jwt_secret"))
+
+;; Debug output shows: DATABASE_PASSWORD = ******
+----
+
+==== Supply Chain Security
+
+DPM's dependency management ensures security:
+
+[cols="1,2", frame=none]
+|===
+| *Security Feature* | *How It Works*
+
+| License compliance | `cargo-deny` checks all dependencies
+| Vulnerability scanning | Automated security audits in CI
+| Reproducible builds | Locked dependency versions
+| Audit trail | Full dependency tree in SBOM
+|===
+
+=== Cross-Platform Development
+
+==== Linux, macOS, Windows
+
+One script works on all platforms:
+
+[source,lisp]
+----
+;; Cross-platform path handling
+(rust-env-set "CONFIG_PATH" (rust-path-join (rust-env-var "HOME") ".config" "myapp"))
+
+;; Cross-platform user/group IDs
+(rust-env-set "HOST_UID" (rust-process-output "id" "-u"))
+(rust-env-set "HOST_GID" (rust-process-output "id" "-g"))
+
+;; Cross-platform Docker socket detection (automatic!)
+(docker "compose" "up" "-d")
+----
+
+=== Advanced Use Cases
+
+==== Dynamic Configuration
+
+Build configurations dynamically:
+
+[source,lisp]
+----
+;; Generate random password
+(rust-env-set "DB_PASSWORD" (rust-process-output "openssl" "rand" "-base64" "32"))
+
+;; Get current git branch
+(rust-env-set "GIT_BRANCH" (rust-process-output "git" "rev-parse" "--abbrev-ref" "HEAD"))
+
+;; Build image tag from git info
+(rust-env-set "IMAGE_TAG" (concat (rust-env-var "GIT_BRANCH") "-" (rust-process-output "git" "rev-parse" "--short" "HEAD")))
+
+;; Use in Docker Compose
+(docker "compose" "up" "-d")
+----
+
+==== Pipeline Integration
+
+DPM works with any pipeline system:
+
+[source,lisp]
+----
+;; GitHub Actions example
+(rust-env-set "GITHUB_TOKEN" (rust-env-var "GITHUB_TOKEN"))
+(rust-env-set "GITHUB_REF" (rust-env-var "GITHUB_REF"))
+(rust-env-set "GITHUB_SHA" (rust-env-var "GITHUB_SHA"))
+
+;; Build and push
+(docker "build" "-t" (concat "myapp:" (rust-env-var "GITHUB_SHA")) ".")
+(docker "push" (concat "myapp:" (rust-env-var "GITHUB_SHA")))
+----
+
+== Next Steps
+
+* xref:comparison.adoc[Alternatives Comparison] — See how DPM compares to other solutions
+* xref:getting-started:installation.adoc[Installation] — Get started with DPM
+* xref:commands:overview.adoc[Commands] — Explore the full command reference

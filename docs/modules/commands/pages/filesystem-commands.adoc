@@ -1,0 +1,324 @@
+= Filesystem Commands
+:navtitle: Filesystem Commands
+:description: Commands for file and directory operations
+
+== Overview
+
+Filesystem commands provide operations for reading, writing, and managing files and directories.
+
+== rust-fs-read-to-string
+
+Reads file contents as string.
+
+=== Syntax
+
+[source,lisp]
+----
+(rust-fs-read-to-string "path")
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `path` | Path to file to read
+|===
+
+=== Return Value
+
+Returns file contents as string.
+
+=== Examples
+
+[source,lisp]
+----
+(rust-fs-read-to-string "config.txt")  ; => "file contents"
+(rust-fs-read-to-string "/etc/hostname")  ; => "my-computer"
+----
+
+== rust-fs-write
+
+Writes string to file.
+
+=== Syntax
+
+[source,lisp]
+----
+(rust-fs-write "path" "content")
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `path` | Path to file to write
+| `content` | Content to write
+|===
+
+=== Return Value
+
+Returns nil.
+
+=== Examples
+
+[source,lisp]
+----
+(rust-fs-write "output.txt" "Hello World")
+(rust-fs-write "config.json" "{\"key\": \"value\"}")
+----
+
+== rust-fs-create-dir
+
+Creates directory.
+
+=== Syntax
+
+[source,lisp]
+----
+(rust-fs-create-dir "path")
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `path` | Path to directory to create
+|===
+
+=== Return Value
+
+Returns nil.
+
+=== Examples
+
+[source,lisp]
+----
+(rust-fs-create-dir "new-folder")
+(rust-fs-create-dir "/tmp/my-app")
+----
+
+== rust-fs-copy
+
+Copies file.
+
+=== Syntax
+
+[source,lisp]
+----
+(rust-fs-copy "source" "destination")
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `source` | Source file path
+| `destination` | Destination file path
+|===
+
+=== Return Value
+
+Returns nil.
+
+=== Examples
+
+[source,lisp]
+----
+(rust-fs-copy "source.txt" "destination.txt")
+(rust-fs-copy "config.template" "config.json")
+----
+
+== rust-path-exists
+
+Checks if path exists.
+
+=== Syntax
+
+[source,lisp]
+----
+(rust-path-exists "path")
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `path` | Path to check
+|===
+
+=== Return Value
+
+Returns boolean (true/false).
+
+=== Examples
+
+[source,lisp]
+----
+(rust-path-exists ".")           ; => true
+(rust-path-exists "/tmp")        ; => true
+(rust-path-exists "/nonexistent")  ; => false
+----
+
+== rust-path-is-dir
+
+Checks if path is directory.
+
+=== Syntax
+
+[source,lisp]
+----
+(rust-path-is-dir "path")
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `path` | Path to check
+|===
+
+=== Return Value
+
+Returns boolean (true/false).
+
+=== Examples
+
+[source,lisp]
+----
+(rust-path-is-dir "/tmp")        ; => true
+(rust-path-is-dir "/etc/hosts")  ; => false
+----
+
+== rust-path-is-file
+
+Checks if path is file.
+
+=== Syntax
+
+[source,lisp]
+----
+(rust-path-is-file "path")
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `path` | Path to check
+|===
+
+=== Return Value
+
+Returns boolean (true/false).
+
+=== Examples
+
+[source,lisp]
+----
+(rust-path-is-file "/etc/hosts")  ; => true
+(rust-path-is-file "/tmp")        ; => false
+----
+
+== Practical Examples
+
+=== Configuration Management
+
+[source,lisp]
+----
+;; Read config file
+(rust-fs-read-to-string "config.json")
+
+;; Write updated config
+(rust-fs-write "config.json" "{\"key\": \"new-value\"}")
+
+;; Backup config
+(rust-fs-copy "config.json" "config.backup.json")
+----
+
+=== Directory Setup
+
+[source,lisp]
+----
+;; Create project directories
+(rust-fs-create-dir "src")
+(rust-fs-create-dir "tests")
+(rust-fs-create-dir "docs")
+
+;; Check if directories exist
+(if (rust-path-exists "src")
+  (print "src directory exists")
+  (print "src directory missing"))
+----
+
+=== File Operations
+
+[source,lisp]
+----
+;; Read and process file
+(print "File contents: "
+  (rust-fs-read-to-string "input.txt"))
+
+;; Write processed output
+(rust-fs-write "output.txt" "Processed data")
+----
+
+== Error Handling
+
+Filesystem commands return errors as strings:
+
+[source,lisp]
+----
+;; File not found
+(rust-fs-read-to-string "/nonexistent")
+; => Error: No such file or directory (os error 2)
+
+;; Permission denied
+(rust-fs-write "/root/protected" "data")
+; => Error: Permission denied (os error 13)
+----
+
+== Security Considerations
+
+=== Path Traversal
+
+Be careful with user-provided paths:
+
+[source,lisp]
+----
+;; Dangerous: user can escape directory
+(rust-fs-read-to-string user_input)
+
+;; Safe: validate path first
+(rust-path-join safe_directory user_input)
+----
+
+=== Sensitive Files
+
+Never read/write sensitive files without proper security:
+
+[source,lisp]
+----
+;; Avoid reading sensitive files directly
+;; Use secure storage instead
+(rust-fs-read-to-string "/etc/shadow")  ; Dangerous!
+----
+
+== See Also
+
+* xref:core-commands.adoc[Core Commands]
+* xref:path-commands.adoc[Path Commands]
+* xref:environment-commands.adoc[Environment Commands]

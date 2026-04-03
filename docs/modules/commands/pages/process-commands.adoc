@@ -1,0 +1,272 @@
+= Process Commands
+:navtitle: Process Commands
+:description: Execute system commands and capture output
+
+== Overview
+
+Process commands allow DPM to execute external commands and capture their output.
+
+== rust-process-command
+
+Executes a system command.
+
+=== Syntax
+
+[source,lisp]
+----
+(rust-process-command "command" "arg1" "arg2" ...)
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `command` | Command to execute
+| `arg1, arg2, ...` | Command arguments
+|===
+
+=== Return Value
+
+Returns exit code (0 for success).
+
+=== Examples
+
+[source,lisp]
+----
+(rust-process-command "ls" "-la")  ; Lists files
+(rust-process-command "echo" "Hello")  ; Prints "Hello"
+(rust-process-command "git" "status")  ; Shows git status
+----
+
+== rust-process-output
+
+Executes a command and captures output.
+
+=== Syntax
+
+[source,lisp]
+----
+(rust-process-output "command" "arg1" "arg2" ...)
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `command` | Command to execute
+| `arg1, arg2, ...` | Command arguments
+|===
+
+=== Return Value
+
+Returns command output as string (stdout).
+
+=== Examples
+
+[source,lisp]
+----
+(rust-process-output "echo" "Hello")  ; => "Hello"
+(rust-process-output "pwd")  ; => "/current/directory"
+(rust-process-output "whoami")  ; => "username"
+----
+
+== Practical Examples
+
+=== System Information
+
+[source,lisp]
+----
+;; Get current user
+(print "User: " (rust-process-output "whoami"))
+
+;; Get hostname
+(print "Hostname: " (rust-process-output "hostname"))
+
+;; Get current date
+(print "Date: " (rust-process-output "date"))
+----
+
+=== Git Operations
+
+[source,lisp]
+----
+;; Get current branch
+(print "Branch: " (rust-process-output "git" "rev-parse" "--abbrev-ref" "HEAD"))
+
+;; Get commit hash
+(print "Commit: " (rust-process-output "git" "rev-parse" "--short" "HEAD"))
+
+;; Check git status
+(rust-process-command "git" "status")
+----
+
+=== Docker Operations
+
+[source,lisp]
+----
+;; Get Docker version
+(print "Docker: " (rust-process-output "docker" "--version"))
+
+;; List containers
+(rust-process-command "docker" "ps")
+
+;; Docker Compose status
+(rust-process-command "docker" "compose" "ps")
+----
+
+=== File Operations
+
+[source,lisp]
+----
+;; List files
+(rust-process-command "ls" "-la")
+
+;; Count files
+(print "Files: " (rust-process-output "ls" "-1" | wc -l"))
+
+;; Disk usage
+(rust-process-command "du" "-sh" ".")
+----
+
+== Advanced Usage
+
+=== Environment Variables in Commands
+
+Commands inherit DPM's environment:
+
+[source,lisp]
+----
+;; Set environment variable
+(rust-env-set "MY_VAR" "hello")
+
+;; Use in command
+(rust-process-output "printenv" "MY_VAR")  ; => "hello"
+----
+
+=== Chaining Commands
+
+Combine with other DPM commands:
+
+[source,lisp]
+----
+;; Build path and check if exists
+(rust-process-command "ls" (rust-path-join (rust-env-current-dir) "src"))
+
+;; Get output and process it
+(print "Files: " (rust-process-output "ls" "-1"))
+----
+
+=== Error Handling
+
+Capture both stdout and stderr:
+
+[source,lisp]
+----
+;; Command not found
+(rust-process-output "nonexistent")  ; => Error output
+
+;; Permission denied
+(rust-process-output "cat" "/etc/shadow")  ; => Error output
+----
+
+== Security Considerations
+
+=== Command Injection
+
+Be careful with user input:
+
+[source,lisp]
+----
+;; Dangerous: user input directly in command
+(rust-process-output user_input)
+
+;; Safe: validate input first
+(if (rust-path-exists user_input)
+  (rust-process-command "ls" user_input)
+  (print "Invalid path"))
+----
+
+=== Privilege Escalation
+
+Avoid running commands as root:
+
+[source,lisp]
+----
+;; Dangerous: sudo without validation
+(rust-process-command "sudo" "rm" "-rf" user_input)
+
+;; Better: validate and use minimal privileges
+(rust-process-command "rm" user_input)
+----
+
+== Cross-Platform Considerations
+
+=== Command Availability
+
+Different platforms have different commands:
+
+[cols="1,1,1", options="header"]
+|===
+| Command | Linux/macOS | Windows
+
+| List files | `ls` | `dir`
+| Print text | `echo` | `echo`
+| Get user | `whoami` | `whoami`
+| Get date | `date` | `date`
+|===
+
+=== Platform Detection
+
+Detect platform for conditional execution:
+
+[source,lisp]
+----
+;; Get platform
+(rust-env-var "OS")  ; => "Linux", "Darwin", "Windows_NT"
+
+;; Conditional command
+(if (= (rust-env-var "OS") "Linux")
+  (rust-process-command "ls" "-la")
+  (rust-process-command "dir"))
+----
+
+== Performance Considerations
+
+=== Process Overhead
+
+Each process execution has overhead:
+
+[source,lisp]
+----
+;; Bad: multiple process calls
+(print "User: " (rust-process-output "whoami"))
+(print "Home: " (rust-process-output "echo" "$HOME"))
+(print "Shell: " (rust-process-output "echo" "$SHELL"))
+
+;; Better: single process call
+(rust-process-command "env")
+----
+
+### Caching Output
+
+Cache frequently used outputs:
+
+[source,lisp]
+;; Cache git info
+(rust-env-set "GIT_BRANCH" (rust-process-output "git" "rev-parse" "--abbrev-ref" "HEAD"))
+(rust-env-set "GIT_COMMIT" (rust-process-output "git" "rev-parse" "--short" "HEAD"))
+
+;; Use cached values
+(print "Branch: " (rust-env-var "GIT_BRANCH"))
+(print "Commit: " (rust-env-var "GIT_COMMIT"))
+----
+
+== See Also
+
+* xref:core-commands.adoc[Core Commands]
+* xref:environment-commands.adoc[Environment Commands]
+* xref:docker-commands.adoc[Docker Commands]

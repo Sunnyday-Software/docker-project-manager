@@ -1,0 +1,290 @@
+= Docker Commands
+:navtitle: Docker Commands
+:description: Docker Compose integration commands
+
+== Overview
+
+Docker commands provide integration with Docker Compose, allowing you to run Docker Compose commands with automatic environment setup.
+
+== docker
+
+Executes Docker Compose commands.
+
+=== Syntax
+
+[source,lisp]
+----
+(docker "compose" "args" ...)
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `compose` | Docker Compose subcommand
+| `args` | Additional arguments
+|===
+
+=== Return Value
+
+Returns exit code (0 for success).
+
+=== Examples
+
+[source,lisp]
+----
+;; Start services
+(docker "compose" "up" "-d")
+
+;; Stop services
+(docker "compose" "down")
+
+;; Run service
+(docker "compose" "run" "--rm" "app")
+
+;; Build services
+(docker "compose" "build")
+
+;; View logs
+(docker "compose" "logs" "-f")
+----
+
+== Automatic Environment Setup
+
+DPM automatically sets up Docker environment:
+
+=== Docker Socket Detection
+
+include::partial$docker-socket-detection.adoc[]
+
+=== Environment Variables
+
+DPM sets these automatically:
+
+[cols="1,2", frame=none]
+|===
+| *Variable* | *Description*
+
+| `DOCKER_HOST` | Docker daemon socket
+| `DOCKER_BUILDKIT` | Enable BuildKit (set to `1`)
+| `COMPOSE_PROJECT_NAME` | Project name from directory
+|===
+
+== Practical Examples
+
+=== Development Setup
+
+[source,lisp]
+----
+;; Set project environment
+(rust-env-set "PROJECT_NAME" (rust-path-filename (rust-env-current-dir)))
+(rust-env-set "HOST_UID" (rust-process-output "id" "-u"))
+(rust-env-set "HOST_GID" (rust-process-output "id" "-g"))
+
+;; Start development environment
+(docker "compose" "up" "-d")
+----
+
+=== CI/CD Pipeline
+
+[source,lisp]
+----
+;; Set CI environment
+(rust-env-set "CI" "true")
+(rust-env-set "DOCKER_BUILDKIT" "1")
+
+;; Build and test
+(docker "compose" "build")
+(docker "compose" "run" "--rm" "app" "test")
+(docker "compose" "down")
+----
+
+=== Database Setup
+
+[source,lisp]
+----
+;; Set database environment
+(rust-env-set "POSTGRES_DB" "myapp")
+(rust-env-set "POSTGRES_USER" "myuser")
+(rust-env-set "POSTGRES_PASSWORD" (rust-process-output "openssl" "rand" "-base64" "32"))
+
+;; Start database
+(docker "compose" "up" "-d" "postgres")
+
+;; Wait for database
+(rust-process-command "sleep" "5")
+
+;; Run migrations
+(docker "compose" "run" "--rm" "app" "migrate")
+----
+
+=== Multi-Service Setup
+
+[source,lisp]
+----
+;; Start all services
+(docker "compose" "up" "-d")
+
+;; Check status
+(docker "compose" "ps")
+
+;; View logs
+(docker "compose" "logs" "-f" "app")
+----
+
+== Advanced Usage
+
+=== Custom Compose Files
+
+[source,lisp]
+----
+;; Use custom compose file
+(docker "compose" "-f" "docker-compose.custom.yml" "up" "-d")
+
+;; Use multiple files
+(docker "compose" "-f" "docker-compose.yml" "-f" "docker-compose.override.yml" "up" "-d")
+----
+
+=== Service-Specific Commands
+
+[source,lisp]
+----
+;; Start specific service
+(docker "compose" "up" "-d" "postgres")
+
+;; Run command in specific service
+(docker "compose" "exec" "app" "bash")
+
+;; View specific service logs
+(docker "compose" "logs" "app")
+----
+
+=== Build and Push
+
+[source,lisp]
+----
+;; Build images
+(docker "compose" "build")
+
+;; Push to registry
+(docker "compose" "push")
+
+;; Build and push
+(docker "compose" "build" "--push")
+----
+
+== Error Handling
+
+Docker commands return clear error messages:
+
+[source,lisp]
+----
+;; Docker not running
+(docker "compose" "up")
+; => Error: Cannot connect to the Docker daemon
+
+;; Service not found
+(docker "compose" "up" "nonexistent")
+; => Error: No such service: nonexistent
+
+;; Port already in use
+(docker "compose" "up")
+; => Error: Port is already allocated
+----
+
+== Security Considerations
+
+=== Docker Socket Access
+
+DPM automatically detects Docker socket:
+
+[source,lisp]
+----
+;; DPM handles socket detection
+(docker "compose" "up" "-d")  ; Uses correct socket automatically
+----
+
+=== Sensitive Data
+
+Protect sensitive Docker environment:
+
+[source,lisp]
+----
+;; Sensitive variables are auto-masked
+(rust-env-set "DATABASE_PASSWORD" (rust-fs-read-to-string "/secrets/db_password"))
+(rust-env-set "API_KEY" (rust-fs-read-to-string "/secrets/api_key"))
+
+;; Debug output shows masked values
+(debug "DATABASE_PASSWORD" (rust-env-var "DATABASE_PASSWORD"))
+; => Debug: DATABASE_PASSWORD = ******
+----
+
+=== Network Security
+
+Be careful with exposed ports:
+
+[source,lisp]
+----
+;; Expose only necessary ports
+(docker "compose" "up" "-d")  ; Uses docker-compose.yml ports
+
+;; Check exposed ports
+(docker "compose" "ps")
+----
+
+== Cross-Platform Considerations
+
+=== Docker Desktop
+
+DPM works with Docker Desktop on all platforms:
+
+[source,lisp]
+----
+;; Automatic socket detection
+(docker "compose" "up" "-d")  ; Works on Linux, macOS, Windows
+----
+
+### WSL2 (Windows)
+
+For Windows with WSL2:
+
+[source,lisp]
+----
+;; DPM detects WSL2 Docker socket
+(docker "compose" "up" "-d")  ; Uses //var/run/docker.sock
+----
+
+== Troubleshooting
+
+=== Common Issues
+
+==== Docker Not Running
+
+Problem: Cannot connect to Docker daemon
+
+Solution: Start Docker Desktop or Docker daemon
+
+==== Permission Denied
+
+Problem: Permission denied on Docker socket
+
+Solution: Add user to docker group (Linux):
+
+[source,bash]
+----
+sudo usermod -aG docker $USER
+----
+
+==== Port Conflicts
+
+Problem: Port already in use
+
+Solution: Change port in docker-compose.yml or stop conflicting service
+
+== See Also
+
+* xref:core-commands.adoc[Core Commands]
+* xref:environment-commands.adoc[Environment Commands]
+* xref:process-commands.adoc[Process Commands]

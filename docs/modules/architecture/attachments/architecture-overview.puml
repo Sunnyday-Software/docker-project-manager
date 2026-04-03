@@ -1,0 +1,35 @@
+@startuml architecture-overview
+!theme reddress-lightred
+
+package "CLI Layer" {
+  [main.rs]
+  [Argument Parser]
+}
+
+package "Lisp Interpreter" {
+  [Parser]
+  [AST Evaluator]
+  [Value System]
+}
+
+package "Command System" {
+  [CommandRegistry]
+  [Command Trait]
+  [Closure Commands]
+}
+
+package "Context" {
+  [Variables]
+  [Versions]
+  [Debug State]
+}
+
+[main.rs] --> [Argument Parser]
+[Argument Parser] --> [Parser]
+[Parser] --> [AST Evaluator]
+[AST Evaluator] --> [CommandRegistry]
+[AST Evaluator] --> [Value System]
+[CommandRegistry] --> [Command Trait]
+[AST Evaluator] --> [Context]
+
+@enduml

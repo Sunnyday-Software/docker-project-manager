@@ -1,0 +1,385 @@
+= Code Style
+:navtitle: Code Style
+:description: DPM's code style guidelines
+
+== Overview
+
+DPM follows strict code style guidelines for consistency and maintainability.
+
+== Rust Style
+
+=== Formatting
+
+DPM uses `rustfmt` for formatting:
+
+[source,bash]
+----
+# Format code
+cargo fmt
+
+# Check formatting
+cargo fmt --check
+----
+
+=== Configuration
+
+`rustfmt.toml`:
+
+[source,toml]
+----
+max_width = 80
+tab_spaces = 2
+edition = "2021"
+imports_granularity = "Module"
+group_imports = "StdExternalCrate"
+----
+
+=== Line Width
+
+Maximum 80 characters per line.
+
+=== Indentation
+
+2 spaces (no hard tabs).
+
+=== Imports
+
+Organize imports:
+
+[source,rust]
+----
+// Standard library
+use std::collections::HashMap;
+use std::path::PathBuf;
+
+// External crates
+use lexpr::Value;
+use walkdir::WalkDir;
+
+// Local modules
+use crate::commands::Command;
+use crate::context::Context;
+----
+
+== Naming Conventions
+
+=== Variables
+
+[source,rust]
+----
+// Snake case for variables
+let my_variable = "value";
+let command_name = "print";
+----
+
+=== Functions
+
+[source,rust]
+----
+// Snake case for functions
+fn my_function() {}
+fn execute_command() {}
+----
+
+=== Types
+
+[source,rust]
+----
+// Pascal case for types
+struct MyStruct {}
+enum MyEnum {}
+trait MyTrait {}
+----
+
+=== Constants
+
+[source,rust]
+----
+// Screaming snake case for constants
+const MAX_SIZE: usize = 1024;
+const DEFAULT_TIMEOUT: u64 = 30;
+----
+
+== Documentation
+
+=== Public APIs
+
+Document all public APIs:
+
+[source,rust]
+----
+/// Executes the command with given arguments.
+///
+/// # Arguments
+///
+/// * `args` - Command arguments
+/// * `ctx` - Execution context
+///
+/// # Returns
+///
+/// Command result or error
+///
+/// # Examples
+///
+/// ```
+/// let result = execute(vec![], &mut ctx);
+/// assert!(result.is_ok());
+/// ```
+pub fn execute(&self, args: Vec<Value>, ctx: &mut Context) -> Result<Value, String> {
+    // Implementation
+}
+----
+
+=== Module Documentation
+
+Document modules:
+
+[source,rust]
+----
+//! # Commands Module
+//!
+//! This module contains all DPM commands.
+//!
+//! ## Command Categories
+//!
+//! - Core: Basic operations
+//! - Environment: Environment variables
+//! - Filesystem: File operations
+//! - Path: Path manipulation
+//! - Process: Command execution
+//! - Docker: Docker integration
+----
+
+== Error Handling
+
+=== Error Types
+
+Use `Result` for error handling:
+
+[source,rust]
+----
+fn my_function() -> Result<Value, String> {
+    // Return Ok or Err
+    Ok(Value::Str("success".to_string()))
+}
+----
+
+=== Error Messages
+
+Provide clear error messages:
+
+[source,rust]
+----
+fn read_file(path: &str) -> Result<String, String> {
+    std::fs::read_to_string(path)
+        .map_err(|e| format!("Failed to read file '{}': {}", path, e))
+}
+----
+
+=== Error Propagation
+
+Propagate errors with `?`:
+
+[source,rust]
+----
+fn process_file(path: &str) -> Result<String, String> {
+    let content = std::fs::read_to_string(path)
+        .map_err(|e| format!("Failed to read file: {}", e))?;
+    
+    Ok(content.to_uppercase())
+}
+----
+
+== Testing
+
+=== Test Organization
+
+Organize tests in modules:
+
+[source,rust]
+----
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_my_function() {
+        assert_eq!(my_function(), expected_value);
+    }
+
+    #[test]
+    fn test_error_case() {
+        assert!(my_function_with_error().is_err());
+    }
+}
+----
+
+=== Test Naming
+
+Use descriptive test names:
+
+[source,rust]
+----
+#[test]
+fn test_print_command_concatenates_strings() {
+    // Test implementation
+}
+
+#[test]
+fn test_print_command_handles_empty_input() {
+    // Test implementation
+}
+----
+
+== Command Style
+
+=== Command Structure
+
+Follow command structure:
+
+[source,rust]
+----
+pub struct MyCommand;
+
+impl Command for MyCommand {
+    fn execute(&self, args: Vec<Value>, ctx: &mut Context) -> Result<Value, String> {
+        // Implementation
+    }
+
+    fn name(&self) -> &'static str { "my-command" }
+    fn description(&self) -> &'static str { "Does something useful" }
+    fn syntax(&self) -> &'static str { "(my-command arg1 arg2)" }
+    fn examples(&self) -> &'static str { "(my-command \"value\")" }
+    fn tag(&self) -> &Tag { &tags::CORE }
+}
+----
+
+=== Command Registration
+
+Register commands in modules:
+
+[source,rust]
+----
+// src/commands/core/mod.rs
+pub fn register_core_commands(registry: &mut CommandRegistry) {
+    registry.register(PrintCommand);
+    registry.register(SumCommand);
+    registry.register(MultiplyCommand);
+}
+----
+
+== Performance
+
+=== Avoid Allocations
+
+Minimize allocations:
+
+[source,rust]
+----
+// Bad: Allocates new String
+fn bad_function(input: &str) -> String {
+    input.to_string()
+}
+
+// Good: Use references
+fn good_function(input: &str) -> &str {
+    input
+}
+----
+
+=== Use References
+
+Prefer references over clones:
+
+[source,rust]
+----
+// Bad: Clones value
+fn bad_function(value: Value) -> Value {
+    value.clone()
+}
+
+// Good: Takes reference
+fn good_function(value: &Value) -> Value {
+    value.clone()  // Only clone when necessary
+}
+----
+
+== Security
+
+=== Input Validation
+
+Validate all inputs:
+
+[source,rust]
+----
+fn process_path(path: &str) -> Result<String, String> {
+    // Validate path
+    if path.is_empty() {
+        return Err("Path cannot be empty".to_string());
+    }
+    
+    // Check for path traversal
+    if path.contains("..") {
+        return Err("Path traversal not allowed".to_string());
+    }
+    
+    Ok(path.to_string())
+}
+----
+
+=== Sensitive Data
+
+Handle sensitive data carefully:
+
+[source,rust]
+----
+// Don't log sensitive data
+fn process_password(password: &str) -> Result<(), String> {
+    // Don't do this:
+    // println!("Password: {}", password);
+    
+    // Do this:
+    println!("Processing password...");
+    
+    Ok(())
+}
+----
+
+== Linting
+
+=== Clippy
+
+Use Clippy for linting:
+
+[source,bash]
+----
+# Run Clippy
+cargo clippy
+
+# Run with warnings as errors
+cargo clippy -- -D warnings
+----
+
+=== Common Lints
+
+Enable common lints:
+
+[source,rust]
+----
+#![warn(
+    missing_docs,
+    missing_debug_implementations,
+    missing_copy_implementations,
+    trivial_casts,
+    trivial_numeric_casts,
+    unsafe_code,
+    unused_import_braces,
+    unused_qualifications
+)]
+----
+
+== See Also
+
+* xref:contributing.adoc[Contributing]
+* xref:testing.adoc[Testing]
+* xref:architecture:extending-commands.adoc[Extending Commands]

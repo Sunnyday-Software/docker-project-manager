@@ -1,0 +1,6 @@
+= Architecture
+:navtitle: Architecture
+
+* xref:lisp-interpreter.adoc[Lisp Interpreter]
+* xref:command-system.adoc[Command System]
+* xref:extending-commands.adoc[Extending Commands]

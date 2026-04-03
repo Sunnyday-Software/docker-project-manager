@@ -1,0 +1,328 @@
+= Cross-Platform Support
+:navtitle: Cross-Platform
+:description: DPM's cross-platform capabilities
+
+== Overview
+
+DPM provides consistent behavior across Linux, macOS, and Windows through Rust's cross-platform capabilities.
+
+== Supported Platforms
+
+=== Operating Systems
+
+[cols="1,1,3", options="header"]
+|===
+| Platform | Status | Notes
+
+| Linux | ✅ Full support | x86_64, ARM64, musl
+| macOS | ✅ Full support | Intel, Apple Silicon
+| Windows | ✅ Full support | x86_64, GNU toolchain
+|===
+
+=== Architectures
+
+[cols="1,1,2", options="header"]
+|===
+| Architecture | Platform | Binary
+
+| x86_64 | Linux, macOS, Windows | Standard
+| ARM64 | Linux, macOS | Apple Silicon, ARM servers
+| musl | Linux | Static binary
+|===
+
+== Cross-Platform Features
+
+=== Path Handling
+
+DPM handles paths correctly on all platforms:
+
+[source,lisp]
+----
+;; Works on all platforms
+(rust-path-join "home" "user" "documents")
+; Linux/macOS: "/home/user/documents"
+; Windows: "home\user\documents"
+----
+
+=== Path Separators
+
+[cols="1,1,1", options="header"]
+|===
+| Platform | Separator | Example
+
+| Linux | `/` | `/home/user/file`
+| macOS | `/` | `/Users/user/file`
+| Windows | `\` | `C:\Users\John\file`
+|===
+
+=== Environment Variables
+
+DPM handles environment variables correctly:
+
+[source,lisp]
+;; Get environment variable (works on all platforms)
+(rust-env-var "PATH")
+; Linux/macOS: "/usr/bin:/bin:..."
+; Windows: "C:\Windows\system32;..."
+----
+
+=== Line Endings
+
+DPM handles line endings correctly:
+
+1. **Linux/macOS**: LF (`\n`)
+2. **Windows**: CRLF (`\r\n`)
+3. **Automatic**: DPM normalizes automatically
+
+== Docker Integration
+
+=== Docker Socket Detection
+
+DPM detects Docker socket automatically:
+
+[cols="1,1,2", options="header"]
+|===
+| Platform | Socket Path | Notes
+
+| Linux | `/var/run/docker.sock` | Standard
+| Linux (XDG) | `$XDG_RUNTIME_DIR/docker.sock` | XDG compliant
+| macOS | `~/.docker/desktop/docker.sock` | Docker Desktop
+| Windows | `//var/run/docker.sock` | WSL2
+|===
+
+=== Docker Compose
+
+Docker Compose commands work consistently:
+
+[source,lisp]
+----
+;; Works on all platforms
+(docker "compose" "up" "-d")
+(docker "compose" "down")
+(docker "compose" "ps")
+----
+
+== Platform-Specific Features
+
+=== Linux
+
+[cols="1,2", frame=none]
+|===
+| *Feature* | *Description*
+
+| musl builds | Static binaries
+| XDG compliance | Follows XDG Base Directory
+| systemd integration | System service support
+|===
+
+=== macOS
+
+[cols="1,2", frame=none]
+|===
+| *Feature* | *Description*
+
+| Universal binaries | Intel + Apple Silicon
+| Homebrew integration | Package manager support
+| Keychain integration | Secure storage (future)
+|===
+
+=== Windows
+
+[cols="1,2", frame=none]
+|===
+| *Feature* | *Description*
+
+| WSL2 support | Windows Subsystem for Linux
+| PowerShell integration | Shell support
+| Windows paths | Correct path handling
+|===
+
+== Binary Distribution
+
+=== Linux
+
+[source,bash]
+----
+# x86_64
+dpm-linux-x86_64
+
+# ARM64
+dpm-linux-arm64
+
+# musl (static)
+dpm-linux-musl
+----
+
+=== macOS
+
+[source,bash]
+----
+# Universal binary
+dpm-macos-universal
+
+# Intel
+dpm-macos-x86_64
+
+# Apple Silicon
+dpm-macos-arm64
+----
+
+=== Windows
+
+[source,cmd]
+----
+# x86_64
+dpm-windows-x86_64.exe
+----
+
+== Cross-Platform Scripts
+
+### Writing Portable Scripts
+
+DPM scripts work on all platforms:
+
+[source,lisp]
+----
+;; Cross-platform script
+(rust-env-set "PROJECT_NAME" (rust-path-filename (rust-env-current-dir)))
+(rust-env-set "CONFIG_PATH" (rust-path-join (rust-env-current-dir) "config"))
+
+;; Works on all platforms
+(print "Project: " (rust-env-var "PROJECT_NAME"))
+(print "Config: " (rust-env-var "CONFIG_PATH"))
+----
+
+=== Platform Detection
+
+Detect platform for conditional logic:
+
+[source,lisp]
+----
+;; Get platform
+(rust-env-var "OS")  ; => "Linux", "Darwin", "Windows_NT"
+
+;; Conditional logic
+(if (= (rust-env-var "OS") "Linux")
+  (print "Running on Linux")
+  (print "Running on other platform"))
+----
+
+=== Path Operations
+
+Cross-platform path operations:
+
+[source,lisp]
+----
+;; Build paths (works on all platforms)
+(rust-path-join (rust-env-home-dir) ".config" "myapp")
+(rust-path-join (rust-env-current-dir) "src" "main.rs")
+
+;; Get path components
+(rust-path-filename "/path/to/file.txt")  ; => "file.txt"
+(rust-path-parent "/path/to/file.txt")    ; => "/path/to"
+----
+
+== Docker Cross-Platform
+
+### Docker Desktop
+
+Docker Desktop works on all platforms:
+
+[source,lisp]
+----
+;; Works with Docker Desktop
+(docker "compose" "up" "-d")
+----
+
+### WSL2 (Windows)
+
+DPM works with WSL2:
+
+[source,lisp]
+----
+;; DPM detects WSL2 Docker socket
+(docker "compose" "up" "-d")
+----
+
+### Docker Socket Mapping
+
+Docker socket is mapped correctly:
+
+[cols="1,1,2", options="header"]
+|===
+| Platform | Docker Socket | Notes
+
+| Linux | `/var/run/docker.sock` | Standard
+| macOS | `~/.docker/desktop/docker.sock` | Docker Desktop
+| Windows | `//var/run/docker.sock` | WSL2
+|===
+
+## Testing Cross-Platform
+
+### CI Testing
+
+Test on all platforms in CI:
+
+[source,yaml]
+----
+# .github/workflows/cross-platform.yml
+name: Cross-Platform
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: cargo build
+      - name: Test
+        run: cargo test
+----
+
+### Local Testing
+
+Test locally with Docker:
+
+[source,bash]
+----
+# Test on Linux
+docker run --rm -v $(pwd):/app -w /app rust:latest cargo test
+
+# Test on Alpine (musl)
+docker run --rm -v $(pwd):/app -w /app rust:alpine cargo test
+----
+
+## Best Practices
+
+### Path Handling
+
+1. **Always use rust-path-join**: Never hardcode paths
+2. **Avoid platform-specific code**: Use DPM's abstractions
+3. **Test on all platforms**: Verify cross-platform behavior
+
+### Environment Variables
+
+1. **Use rust-env-var**: Portable environment access
+2. **Avoid platform-specific vars**: Use generic names
+3. **Document platform differences**: Note any differences
+
+### Binary Distribution
+
+1. **Provide all platforms**: Linux, macOS, Windows
+2. **Include checksums**: SHA256 checksums
+3. **Sign binaries**: GPG signatures
+
+## See Also
+
+* xref:building.adoc[Building]
+* xref:ci-cd.adoc[CI/CD]
+* xref:commands:path-commands.adoc[Path Commands]

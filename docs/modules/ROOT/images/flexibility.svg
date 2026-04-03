@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-labelledby="t d">
+  <title id="t">Flexibility</title>
+  <desc id="d">Connected modules with a surrounding adaptive flow.</desc>
+  <rect width="64" height="64" rx="18" fill="#F8FAFC"/>
+  <rect x="16" y="16" width="12" height="12" rx="4" fill="#DBEAFE" stroke="#0F172A" stroke-width="3"/>
+  <rect x="36" y="16" width="12" height="12" rx="4" fill="#CCFBF1" stroke="#0F172A" stroke-width="3"/>
+  <rect x="26" y="36" width="12" height="12" rx="4" fill="#E0F2FE" stroke="#0F172A" stroke-width="3"/>
+  <path d="M28 22h8M32 28v8" stroke="#0F172A" stroke-width="3" stroke-linecap="round"/>
+  <path d="M18 44c2.4 4.7 7.3 8 14 8s11.6-3.3 14-8" stroke="#2563EB" stroke-width="3" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,400 @@
+= Extending DPM with Custom Commands
+:navtitle: Extending Commands
+:description: How to add custom commands to DPM
+
+== Overview
+
+DPM's extensible architecture allows adding custom commands through two approaches: struct-based commands and closure-based commands.
+
+== Quick: Closure-Based Commands
+
+For simple commands, use closures:
+
+[source,rust]
+----
+// In your command registration module
+registry.register_closure_with_help(
+    "my-custom-cmd",           // Command name
+    "Does something useful",   // Description
+    "(my-custom-cmd arg1)",    // Syntax
+    "(my-custom-cmd \"test\")", // Example
+    |args: Vec<Value>, ctx: &mut Context| -> Result<Value, String> {
+        let arg = args.first()
+            .ok_or("Missing argument")?;
+        
+        // Your logic here
+        Ok(Value::Str(format!("Processed: {}", arg)))
+    }
+);
+----
+
+=== Closure Command Features
+
+[cols="1,3", frame=none]
+|===
+| *Feature* | *Description*
+
+| Name | Unique identifier for the command
+| Description | What the command does
+| Syntax | How to call the command
+| Example | Usage example
+| Function | Implementation
+|===
+
+=== Example Closure Commands
+
+==== String Reverse
+
+[source,rust]
+----
+registry.register_closure_with_help(
+    "reverse",
+    "Reverses a string",
+    "(reverse \"string\")",
+    "(reverse \"hello\")",
+    |args, ctx| {
+        let input = args.first()
+            .ok_or("Missing argument")?
+            .to_string();
+        Ok(Value::Str(input.chars().rev().collect()))
+    }
+);
+----
+
+==== File Extension Check
+
+[source,rust]
+----
+registry.register_closure_with_help(
+    "is-pdf",
+    "Checks if file is PDF",
+    "(is-pdf \"file.pdf\")",
+    "(is-pdf \"document.pdf\")",
+    |args, ctx| {
+        let path = args.first()
+            .ok_or("Missing argument")?
+            .to_string();
+        Ok(Value::Bool(path.ends_with(".pdf")))
+    }
+);
+----
+
+== Struct-Based Commands
+
+For complex commands, implement the `Command` trait:
+
+[source,rust]
+----
+pub struct MyComplexCommand;
+
+impl Command for MyComplexCommand {
+    fn execute(
+        &self, 
+        args: Vec<Value>, 
+        ctx: &mut Context
+    ) -> Result<Value, String> {
+        // Full implementation with error handling
+        validate_args(&args)?;
+        process(args, ctx)
+    }
+    
+    fn name(&self) -> &'static str { "my-complex-cmd" }
+    fn description(&self) -> &'static str { 
+        "A complex command with validation" 
+    }
+    fn syntax(&self) -> &'static str { 
+        "(my-complex-cmd <required> [optional])" 
+    }
+    fn examples(&self) -> &'static str { 
+        "(my-complex-cmd \"value\")" 
+    }
+    fn tag(&self) -> &Tag { &tags::CORE }
+}
+
+// Register in mod.rs
+registry.register(MyComplexCommand);
+----
+
+=== Struct Command Features
+
+[cols="1,3", frame=none]
+|===
+| *Feature* | *Description*
+
+| Full trait implementation | All methods required
+| Type safety | Rust's type system
+| Error handling | Comprehensive error types
+| Metadata | Description, syntax, examples
+| Tagging | Command categorization
+|===
+
+=== Example Struct Commands
+
+==== Uppercase Command
+
+[source,rust]
+----
+pub struct UppercaseCommand;
+
+impl Command for UppercaseCommand {
+    fn execute(&self, args: Vec<Value>, ctx: &mut Context) -> Result<Value, String> {
+        let input = args.first()
+            .ok_or("Missing argument")?
+            .to_string();
+        Ok(Value::Str(input.to_uppercase()))
+    }
+
+    fn name(&self) -> &'static str { "uppercase" }
+    fn description(&self) -> &'static str { "Converts string to uppercase" }
+    fn syntax(&self) -> &'static str { "(uppercase \"string\")" }
+    fn examples(&self) -> &'static str { "(uppercase \"hello\")" }
+    fn tag(&self) -> &Tag { &tags::CORE }
+}
+----
+
+==== File Size Command
+
+[source,rust]
+----
+pub struct FileSizeCommand;
+
+impl Command for FileSizeCommand {
+    fn execute(&self, args: Vec<Value>, ctx: &mut Context) -> Result<Value, String> {
+        let path = args.first()
+            .ok_or("Missing argument")?
+            .to_string();
+        
+        let metadata = std::fs::metadata(&path)
+            .map_err(|e| format!("Failed to get metadata: {}", e))?;
+        
+        Ok(Value::Int(metadata.len() as i64))
+    }
+
+    fn name(&self) -> &'static str { "file-size" }
+    fn description(&self) -> &'static str { "Gets file size in bytes" }
+    fn syntax(&self) -> &'static str { "(file-size \"path\")" }
+    fn examples(&self) -> &'static str { "(file-size \"file.txt\")" }
+    fn tag(&self) -> &Tag { &tags::FILESYSTEM }
+}
+----
+
+== Command Registration
+
+=== Registration Process
+
+1. Implement command (struct or closure)
+2. Register in `CommandRegistry`
+3. Command becomes available in S-expressions
+
+=== Registration Locations
+
+[cols="1,3", frame=none]
+|===
+| *Location* | *Purpose*
+
+| `src/commands/core/mod.rs` | Core commands
+| `src/commands/rust/mod.rs` | Rust stdlib commands
+| `src/commands/app/mod.rs` | Application commands
+|===
+
+=== Example Registration
+
+[source,rust]
+----
+// In src/commands/core/mod.rs
+pub fn register_core_commands(registry: &mut CommandRegistry) {
+    registry.register(PrintCommand);
+    registry.register(SumCommand);
+    registry.register(MultiplyCommand);
+    
+    // Closure commands
+    registry.register_closure_with_help(
+        "my-cmd",
+        "My custom command",
+        "(my-cmd arg1)",
+        "(my-cmd \"test\")",
+        |args, ctx| {
+            // Implementation
+            Ok(Value::Nil)
+        }
+    );
+}
+----
+
+== Testing Commands
+
+=== Unit Tests
+
+[source,rust]
+----
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::lisp_interpreter::*;
+
+    #[test]
+    fn test_my_command() {
+        let mut registry = CommandRegistry::new();
+        registry.register(MyComplexCommand);
+        let mut ctx = Context::new(registry);
+        
+        let result = evaluate_string(
+            "(my-complex-cmd \"test\")", 
+            &mut ctx
+        ).unwrap();
+        
+        assert_eq!(result, Value::Str("Processed: test".to_string()));
+    }
+
+    #[test]
+    fn test_command_error() {
+        let mut registry = CommandRegistry::new();
+        registry.register(MyComplexCommand);
+        let mut ctx = Context::new(registry);
+        
+        let result = evaluate_string(
+            "(my-complex-cmd)",  // Missing argument
+            &mut ctx
+        );
+        
+        assert!(result.is_err());
+    }
+}
+----
+
+=== Integration Tests
+
+[source,rust]
+----
+#[test]
+fn test_command_in_script() {
+    let mut registry = CommandRegistry::new();
+    registry.register(MyComplexCommand);
+    let mut ctx = Context::new(registry);
+    
+    let script = r#"
+        (rust-env-set "input" "test")
+        (my-complex-cmd (rust-env-var "input"))
+    "#;
+    
+    let result = evaluate_string(script, &mut ctx).unwrap();
+    assert_eq!(result, Value::Str("Processed: test".to_string()));
+}
+----
+
+== Command Metadata
+
+=== Metadata Fields
+
+[cols="1,3", frame=none]
+|===
+| *Field* | *Purpose*
+
+| `name` | Unique identifier
+| `description` | What the command does
+| `syntax` | How to call the command
+| `examples` | Usage examples
+| `tag` | Command category
+|===
+
+=== Help System Integration
+
+Commands automatically appear in help:
+
+[source,lisp]
+----
+(help "my-cmd")  ; Shows metadata
+----
+
+== Best Practices
+
+=== Command Design
+
+1. **Clear naming**: Use descriptive command names
+2. **Good metadata**: Provide helpful description, syntax, examples
+3. **Error handling**: Return clear error messages
+4. **Type safety**: Validate argument types
+
+=== Example Best Practices
+
+[source,rust]
+----
+// Good command design
+pub struct ReadFileCommand;
+
+impl Command for ReadFileCommand {
+    fn execute(&self, args: Vec<Value>, ctx: &mut Context) -> Result<Value, String> {
+        // Validate arguments
+        let path = args.first()
+            .ok_or("Missing required argument: path")?
+            .to_string();
+        
+        // Validate path exists
+        if !std::path::Path::new(&path).exists() {
+            return Err(format!("File not found: {}", path));
+        }
+        
+        // Read file
+        std::fs::read_to_string(&path)
+            .map(Value::Str)
+            .map_err(|e| format!("Failed to read file: {}", e))
+    }
+
+    fn name(&self) -> &'static str { "read-file" }
+    fn description(&self) -> &'static str { "Reads file contents as string" }
+    fn syntax(&self) -> &'static str { "(read-file \"path\")" }
+    fn examples(&self) -> &'static str { "(read-file \"config.txt\")" }
+    fn tag(&self) -> &Tag { &tags::FILESYSTEM }
+}
+----
+
+=== Security Considerations
+
+1. **Input validation**: Always validate arguments
+2. **Path sanitization**: Prevent path traversal attacks
+3. **Error messages**: Don't leak sensitive information
+4. **Sandboxing**: Respect DPM's security model
+
+== Advanced Topics
+
+### Command Composition
+
+Commands can call other commands:
+
+[source,rust]
+----
+impl Command for ComposeCommand {
+    fn execute(&self, args: Vec<Value>, ctx: &mut Context) -> Result<Value, String> {
+        // Get other command
+        let print_cmd = ctx.registry.get("print")
+            .ok_or("Print command not found")?;
+        
+        // Execute other command
+        print_cmd.execute(args, ctx)
+    }
+}
+----
+
+=== Context Access
+
+Commands can access context:
+
+[source,rust]
+----
+impl Command for ContextAwareCommand {
+    fn execute(&self, args: Vec<Value>, ctx: &mut Context) -> Result<Value, String> {
+        // Get variable from context
+        let var = ctx.variables.get("MY_VAR")
+            .ok_or("Variable not found")?;
+        
+        // Use variable
+        Ok(Value::Str(format!("Got: {}", var)))
+    }
+}
+----
+
+== See Also
+
+* xref:lisp-interpreter.adoc[Lisp Interpreter]
+* xref:command-system.adoc[Command System]
+* xref:commands:overview.adoc[Command Reference]

@@ -1,0 +1,242 @@
+= First Command
+:navtitle: First Command
+:description: Run your first DPM command and learn the basics
+
+== Overview
+
+DPM uses S-expressions (Lisp syntax) for commands. Let's start with the basics.
+
+== Basic Syntax
+
+DPM commands use parentheses:
+
+[source,lisp]
+----
+(command-name arg1 arg2 ...)
+----
+
+For example:
+
+[source,lisp]
+----
+(print "Hello" " " "World")
+----
+
+== Running Your First Command
+
+=== Pipe Mode
+
+The simplest way to run a command is using pipe mode:
+
+[source,bash]
+----
+echo '(print "Hello DPM")' | dpm --pipe
+----
+
+This will output:
+
+[source]
+----
+Hello DPM
+----
+
+=== Command Mode
+
+You can also use command mode directly:
+
+[source,bash]
+----
+dpm --command '(print "Hello DPM")'
+----
+
+=== File Mode
+
+For longer scripts, use file mode:
+
+[source,bash]
+----
+# Create a script file
+cat > hello.lisp << 'EOF'
+(print "Hello from DPM!")
+EOF
+
+# Run it
+dpm --file hello.lisp
+----
+
+== Essential Commands
+
+=== Print Command
+
+The `print` command concatenates and outputs values:
+
+[source,lisp]
+----
+(print "Hello" " " "World")  ; => "Hello World"
+(print 42)                   ; => "42"
+(print "The answer is " (+ 20 22))  ; => "The answer is 42"
+----
+
+=== Arithmetic
+
+DPM supports basic arithmetic:
+
+[source,lisp]
+----
+(+ 1 2 3)    ; => 6 (addition)
+(* 4 5)      ; => 20 (multiplication)
+----
+
+=== Environment Variables
+
+Get and set environment variables:
+
+[source,lisp]
+----
+;; Get current directory
+(rust-env-current-dir)  ; => "/home/user/project"
+
+;; Get environment variable
+(rust-env-var "PATH")   ; => "/usr/bin:/bin:..."
+
+;; Get home directory
+(rust-env-home-dir)     ; => "/home/user"
+
+;; List all environment variables
+(rust-env-vars)         ; => ["PATH=/...", "HOME=/...", ...]
+----
+
+=== File System Operations
+
+Work with files and directories:
+
+[source,lisp]
+----
+;; Read file contents
+(rust-fs-read-to-string "config.txt")  ; => "file contents"
+
+;; Write to file
+(rust-fs-write "output.txt" "Hello World")
+
+;; Check if path exists
+(rust-path-exists ".")     ; => true
+(rust-path-exists "/tmp")  ; => true
+----
+
+=== Path Manipulation
+
+Handle paths cross-platform:
+
+[source,lisp]
+----
+;; Join paths (handles / and \ automatically)
+(rust-path-join "/home" "user" "documents")  ; => "/home/user/documents"
+
+;; Get parent directory
+(rust-path-parent "/home/user/file.txt")     ; => "/home/user"
+
+;; Get filename
+(rust-path-filename "/home/user/file.txt")   ; => "file.txt"
+
+;; Get extension
+(rust-path-extension "document.pdf")         ; => "pdf"
+----
+
+=== Process Execution
+
+Run system commands:
+
+[source,lisp]
+----
+;; Execute command (returns exit code)
+(rust-process-command "ls" "-la")
+
+;; Execute and capture output
+(rust-process-output "echo" "Hello")  ; => "Hello"
+----
+
+== Real-World Example: Docker Setup
+
+Let's create a practical example - setting up a Docker development environment:
+
+[source,lisp]
+----
+;; docker-setup.lisp
+
+;; Set project name from current directory
+(rust-env-set "PROJECT_NAME" (rust-path-filename (rust-env-current-dir)))
+
+;; Set user/group IDs
+(rust-env-set "HOST_UID" (rust-process-output "id" "-u"))
+(rust-env-set "HOST_GID" (rust-process-output "id" "-g"))
+
+;; Print setup info
+(print "Setting up Docker environment for: " (rust-env-var "PROJECT_NAME"))
+(print "Running as UID: " (rust-env-var "HOST_UID"))
+(print "Running as GID: " (rust-env-var "HOST_GID"))
+
+;; Run Docker Compose (if you have docker command)
+(docker "compose" "up" "-d")
+----
+
+Save this as `docker-setup.lisp` and run:
+
+[source,bash]
+----
+dpm --file docker-setup.lisp
+----
+
+== Getting Help
+
+DPM has a built-in help system:
+
+[source,lisp]
+----
+;; List all commands
+(help)
+
+;; Get help for specific command
+(help "print")
+----
+
+== Practice Exercises
+
+=== Exercise 1: Hello World
+
+Create a script that prints your name:
+
+[source,lisp]
+----
+;; Your code here
+(print "Hello, [Your Name]!")
+----
+
+=== Exercise 2: Environment Info
+
+Create a script that shows current directory and home:
+
+[source,lisp]
+----
+;; Your code here
+(print "Current directory: " (rust-env-current-dir))
+(print "Home directory: " (rust-env-home-dir))
+----
+
+=== Exercise 3: Path Operations
+
+Join paths and get filename:
+
+[source,lisp]
+----
+;; Your code here
+(print "Joined path: " (rust-path-join "/home" "user" "project"))
+(print "Filename: " (rust-path-filename "/home/user/file.txt"))
+----
+
+== Next Steps
+
+Now that you've run your first commands:
+
+* xref:configuration.adoc[Configuration] — Learn about DPM configuration
+* xref:commands:overview.adoc[Commands] — Explore the full command reference
+* xref:intro:use-cases.adoc[Use Cases] — See real-world examples

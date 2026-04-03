@@ -1,0 +1,107 @@
+= Docker Project Manager (DPM)
+:navtitle: Home
+:description: DPM - The Lisp-Powered Docker Orchestrator
+:keywords: docker, devops, lisp, s-expression, environment management
+:toc: macro
+:toclevels: 2
+
+== The Lisp-Powered Docker Orchestrator
+
+DPM brings the power of **functional programming** to Docker environment management through an intuitive S-expression interface.
+
+[cols="1,2", frame=none, grid=cols]
+|===
+| *🚀 Cross-Platform* | Linux, macOS (Intel/ARM), Windows — one tool, everywhere
+
+| *🔒 Security-First* | cargo-deny audits, supply chain transparency, sensitive data masking
+
+| *⚡ Scriptable* | Pipe, embed, compose — DPM fits your workflow
+
+| *🧩 Extensible* | Add custom commands via Rust traits or closures
+|===
+
+toc::[]
+
+== Quick Start
+
+[source,bash]
+----
+# Pipe mode - pass expression directly
+echo '(print "Hello Docker")' | dpm --pipe
+
+# Command mode - execute single command
+dpm --command '(rust-env-current-dir)'
+
+# File mode - run script file
+dpm --file my-script.lisp
+----
+
+== Why Teams Choose DPM
+
+[cols="1,1,1", frame=none, grid=cols]
+|===
+| image:efficiency.svg[Efficiency,48,48] | image:security.svg[Security,48,48] | image:flexibility.svg[Flexibility,48,48]
+
+| *Reduce Complexity* | *Audit-Ready* | *Adapt to Any Stack*
+| Single interface for Docker env management | Full dependency audit trail | Works with any Docker Compose setup
+|===
+
+== Core Features
+
+=== Unified Command Interface
+
+Manage Docker environments with consistent, composable commands:
+
+[source,lisp]
+----
+;; Set environment variables
+(rust-env-set "PROJECT_NAME" (rust-path-filename (rust-env-current-dir)))
+(rust-env-set "HOST_UID" (rust-process-output "id" "-u"))
+(rust-env-set "HOST_GID" (rust-process-output "id" "-g"))
+
+;; Run Docker Compose
+(docker "compose" "run" "--rm" "app")
+----
+
+=== Cross-Platform by Design
+
+No more platform-specific shell scripts:
+
+[cols="1,2", frame=none]
+|===
+| *Challenge* | *DPM Solution*
+
+| Path separators (`\` vs `/`) | `(rust-path-join "a" "b")` → handles automatically
+| Line endings (CRLF vs LF) | File ops normalize transparently
+| Docker socket locations | Auto-detects standard, Desktop, XDG paths
+|===
+
+=== Security Without Friction
+
+* *Sensitive data masking*: Debug output automatically hides passwords, tokens, API keys
+* *Dependency auditing*: `cargo-deny` enforces license compliance and vulnerability checks
+* *Supply chain transparency*: Full SBOM via GitHub's dependency graph
+
+== Getting Started
+
+Ready to transform your Docker workflow?
+
+* xref:intro:why-dpm.adoc[Why DPM?] — Understand the problem DPM solves
+* xref:getting-started:installation.adoc[Installation] — Get up and running in minutes
+* xref:commands:overview.adoc[Commands] — Explore the full command reference
+* xref:architecture:lisp-interpreter.adoc[Architecture] — Dive into the technical details
+
+== Download
+
+Get DPM for your platform:
+
+[cols="1,1,1", frame=none]
+|===
+| image:https://img.shields.io/badge/Linux-Supported-FCC624?logo=linux&logoColor=black[Linux] | image:https://img.shields.io/badge/macOS-Supported-111827?logo=apple&logoColor=white[macOS] | image:https://img.shields.io/badge/Windows-Supported-0078D4?logo=windows&logoColor=white[Windows]
+
+| xref:deployment:building.adoc[Linux Build] | xref:deployment:building.adoc[macOS Build] | xref:deployment:building.adoc[Windows Build]
+|===
+
+== License
+
+DPM is licensed under the *GNU General Public License v3.0*. See xref:license.adoc[License Details] for more information.

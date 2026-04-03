@@ -1,0 +1,50 @@
+// Cross-Platform Features
+// This partial describes DPM's cross-platform capabilities
+// Usage: include::partial$cross-platform-features.adoc[]
+
+=== Cross-Platform by Design
+
+DPM provides consistent behavior across Linux, macOS, and Windows.
+
+==== Path Handling
+
+DPM handles path separators automatically:
+
+[cols="1,1,1", options="header"]
+|===
+| Platform | Separator | Example
+
+| Linux | `/` | `/home/user/file.txt`
+| macOS | `/` | `/Users/user/file.txt`
+| Windows | `\` | `C:\Users\John\file.txt`
+|===
+
+Example:
+
+[source,lisp]
+----
+;; Works on all platforms
+(rust-path-join "home" "user" "documents")
+; Linux/macOS: "/home/user/documents"
+; Windows: "home\user\documents"
+----
+
+==== Line Endings
+
+DPM normalizes line endings automatically:
+
+- **Linux/macOS**: LF (`\n`)
+- **Windows**: CRLF (`\r\n`)
+- **DPM**: Automatic normalization
+
+==== Environment Variables
+
+DPM handles environment variables consistently:
+
+[source,lisp]
+----
+;; Get environment variable (works on all platforms)
+(rust-env-var "PATH")
+; Linux/macOS: "/usr/bin:/bin:..."
+; Windows: "C:\Windows\system32;..."
+----

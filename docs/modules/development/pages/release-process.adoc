@@ -1,0 +1,364 @@
+= Release Process
+:navtitle: Release Process
+:description: How DPM releases are managed
+
+== Overview
+
+DPM uses semantic-release for automated, consistent releases.
+
+== Semantic Versioning
+
+=== Version Format
+
+DPM follows semantic versioning (semver):
+
+[source]
+----
+MAJOR.MINOR.PATCH
+----
+
+[cols="1,2", frame=none]
+|===
+| *Component* | *Description*
+
+| MAJOR | Breaking changes
+| MINOR | New features (backward compatible)
+| PATCH | Bug fixes (backward compatible)
+|===
+
+=== Version Examples
+
+[cols="1,1,2", options="header"]
+|===
+| From | To | Type
+
+| 1.0.0 | 2.0.0 | Major (breaking change)
+| 1.0.0 | 1.1.0 | Minor (new feature)
+| 1.0.0 | 1.0.1 | Patch (bug fix)
+|===
+
+== Conventional Commits
+
+=== Commit Format
+
+DPM uses Conventional Commits:
+
+[source]
+----
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+----
+
+=== Commit Types
+
+[cols="1,1,2", options="header"]
+|===
+| Type | Version | Description
+
+| `feat` | Minor | New feature
+| `fix` | Patch | Bug fix
+| `docs` | None | Documentation
+| `style` | None | Code style
+| `refactor` | None | Code refactoring
+| `perf` | Patch | Performance improvement
+| `test` | None | Tests
+| `chore` | None | Maintenance
+| `ci` | None | CI/CD
+| `build` | None | Build system
+| `revert` | Patch | Revert
+|===
+
+=== Breaking Changes
+
+Breaking changes trigger major version:
+
+[source]
+----
+feat!: remove deprecated API
+
+BREAKING CHANGE: The API endpoint has changed
+----
+
+== Release Workflow
+
+=== Automated Process
+
+1. **Commit**: Push to main branch
+2. **CI**: Run tests and checks
+3. **Semantic Release**: Analyze commits
+4. **Version**: Determine new version
+5. **Changelog**: Update CHANGELOG.md
+6. **Git Tag**: Create version tag
+7. **GitHub Release**: Create release
+8. **Build**: Build binaries
+9. **Upload**: Upload binaries
+
+=== Workflow File
+
+[source,yaml]
+----
+# .github/workflows/release.yml
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Semantic Release
+        run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+----
+
+=== Configuration
+
+`.releaserc.json`:
+
+[source,json]
+----
+{
+  "branches": ["main"],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/changelog",
+    "@semantic-release/npm",
+    "@semantic-release/github",
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "sed -i 's/version = \".*\"/version = \"${nextRelease.version}\"/' Cargo.toml"
+      }
+    ]
+  ]
+}
+----
+
+== Changelog
+
+=== Automatic Generation
+
+CHANGELOG.md is automatically updated:
+
+[source,markdown]
+----
+# Changelog
+
+## [1.6.2](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.6.1...v1.6.2) (2026-04-03)
+
+### Bug Fixes
+
+* fix path handling on Windows ([#123](https://github.com/Sunnyday-Software/docker-project-manager/issues/123)) ([abc1234](https://github.com/Sunnyday-Software/docker-project-manager/commit/abc1234))
+
+## [1.6.1](https://github.com/Sunnyday-Software/docker-project-manager/compare/v1.6.0...v1.6.1) (2026-04-01)
+
+### Features
+
+* add new command ([#122](https://github.com/Sunnyday-Software/docker-project-manager/issues/122)) ([def5678](https://github.com/Sunnyday-Software/docker-project-manager/commit/def5678))
+----
+
+=== Changelog Format
+
+Follow Keep a Changelog format:
+
+[source,markdown]
+----
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/),
+and this project adheres to [Semantic Versioning](https://semver.org/).
+
+## [Unreleased]
+
+### Added
+- New features
+
+### Changed
+- Changes
+
+### Fixed
+- Bug fixes
+----
+
+== GitHub Releases
+
+=== Release Creation
+
+GitHub releases are automatically created:
+
+1. **Tag**: Version tag created
+2. **Release notes**: Auto-generated
+3. **Assets**: Binaries attached
+4. **Checksums**: SHA256 checksums
+
+=== Release Assets
+
+Binaries for all platforms:
+
+[cols="1,1,1", options="header"]
+|===
+| Platform | Binary | Notes
+
+| Linux x86_64 | dpm-linux-x86_64 | Standard
+| Linux ARM64 | dpm-linux-arm64 | ARM servers
+| Linux musl | dpm-linux-musl | Static binary
+| macOS x86_64 | dpm-macos-x86_64 | Intel
+| macOS ARM64 | dpm-macos-arm64 | Apple Silicon
+| Windows x86_64 | dpm-windows-x86_64.exe | Windows
+|===
+
+=== Checksums
+
+SHA256 checksums for verification:
+
+[source,bash]
+----
+# Verify checksum
+sha256sum -c checksums.txt
+----
+
+== Pre-release
+
+=== Beta Releases
+
+Create beta releases:
+
+[source]
+----
+feat: new feature (beta)
+
+BREAKING CHANGE: This is a beta release
+----
+
+=== Release Candidates
+
+Create release candidates:
+
+[source]
+----
+feat: new feature (rc)
+
+BREAKING CHANGE: This is a release candidate
+----
+
+== Hotfixes
+
+=== Emergency Fixes
+
+For critical bugs:
+
+1. **Create hotfix branch**: `hotfix/critical-fix`
+2. **Fix issue**: Minimal changes
+3. **Test**: Verify fix
+4. **Merge**: Merge to main
+5. **Release**: Automatic patch release
+
+=== Hotfix Workflow
+
+[source,bash]
+----
+# Create hotfix branch
+git checkout -b hotfix/critical-fix main
+
+# Make fix
+# ...
+
+# Commit
+git commit -m "fix: critical security issue"
+
+# Push
+git push origin hotfix/critical-fix
+
+# Create PR and merge
+----
+
+== Rollback
+
+=== Rolling Back
+
+If release has issues:
+
+1. **Revert commit**: Revert problematic commit
+2. **Create fix**: Develop proper fix
+3. **Release**: Release fix version
+
+=== Revert Command
+
+[source,bash]
+----
+# Revert commit
+git revert <commit-hash>
+
+# Push revert
+git push origin main
+----
+
+== Monitoring
+
+=== Release Monitoring
+
+Monitor releases:
+
+1. **GitHub Releases**: View releases
+2. **CHANGELOG.md**: View changes
+3. **CI/CD**: Monitor workflows
+
+=== Metrics
+
+Track release metrics:
+
+1. **Release frequency**: How often releases
+2. **Time to release**: Time from commit to release
+3. **Release success**: Success rate
+
+== Best Practices
+
+### Commit Messages
+
+Write clear commit messages:
+
+[source]
+----
+# Good
+feat: add new command for file operations
+fix: resolve path handling on Windows
+docs: update installation instructions
+
+# Bad
+update code
+fix bug
+changes
+----
+
+### Release Notes
+
+Write helpful release notes:
+
+1. **Summary**: Brief summary of changes
+2. **Details**: Detailed description
+3. **Breaking changes**: Highlight breaking changes
+4. **Migration**: Migration instructions
+
+### Version Bumping
+
+Let semantic-release determine version:
+
+1. **feat**: Minor version bump
+2. **fix**: Patch version bump
+3. **BREAKING CHANGE**: Major version bump
+
+## See Also
+
+* xref:contributing.adoc[Contributing]
+* xref:deployment:ci-cd.adoc[CI/CD]
+* xref:deployment:building.adoc[Building]

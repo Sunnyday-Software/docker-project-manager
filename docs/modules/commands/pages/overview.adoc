@@ -1,0 +1,111 @@
+= Command Reference
+:navtitle: Commands
+:description: Complete reference for all DPM commands
+
+== Syntax
+
+DPM uses S-expression syntax: `(command arg1 arg2 ...)`
+
+== Command Categories
+
+include::partial$command-categories.adoc[]
+
+== Getting Help
+
+[source,lisp]
+----
+;; List all commands
+(help)
+
+;; Get help for specific command
+(help "rust-fs-read-to-string")
+----
+
+== Command Index
+
+[cols="1,2,3,2", options="header"]
+|===
+| Command | Syntax | Description | Example
+
+| `print` | `(print ...)` | Concatenate and print values | `(print "Hello" "World")`
+| `+` | `(+ n1 n2 ...)` | Sum integers | `(+ 1 2 3)` → `6`
+| `*` | `(* n1 n2 ...)` | Multiply integers | `(* 2 3 4)` → `24`
+| `concat` | `(concat s1 s2 ...)` | Concatenate strings | `(concat "Hello" " " "World")`
+| `debug` | `(debug ...)` | Debug output with masking | `(debug "password" secret)`
+| `rust-env-var` | `(rust-env-var "NAME")` | Get env variable | `(rust-env-var "PATH")`
+| `rust-env-current-dir` | `(rust-env-current-dir)` | Get current directory | `(rust-env-current-dir)`
+| `rust-env-home-dir` | `(rust-env-home-dir)` | Get home directory | `(rust-env-home-dir)`
+| `rust-env-vars` | `(rust-env-vars)` | List all env variables | `(rust-env-vars)`
+| `rust-env-set` | `(rust-env-set "NAME" "VALUE")` | Set env variable | `(rust-env-set "MY_VAR" "value")`
+| `rust-fs-read-to-string` | `(rust-fs-read-to-string "path")` | Read file | `(rust-fs-read-to-string "config.json")`
+| `rust-fs-write` | `(rust-fs-write "path" "content")` | Write file | `(rust-fs-write "output.txt" "data")`
+| `rust-fs-create-dir` | `(rust-fs-create-dir "path")` | Create directory | `(rust-fs-create-dir "new-dir")`
+| `rust-fs-copy` | `(rust-fs-copy "src" "dst")` | Copy file | `(rust-fs-copy "old.txt" "new.txt")`
+| `rust-path-join` | `(rust-path-join "a" "b" ...)` | Join paths | `(rust-path-join "/home" "user")`
+| `rust-path-parent` | `(rust-path-parent "path")` | Get parent directory | `(rust-path-parent "/home/user/file")`
+| `rust-path-filename` | `(rust-path-filename "path")` | Get filename | `(rust-path-filename "/home/user/file.txt")`
+| `rust-path-extension` | `(rust-path-extension "path")` | Get extension | `(rust-path-extension "file.txt")`
+| `rust-path-exists` | `(rust-path-exists "path")` | Check if exists | `(rust-path-exists ".")`
+| `rust-path-is-dir` | `(rust-path-is-dir "path")` | Check if directory | `(rust-path-is-dir "/tmp")`
+| `rust-path-is-file` | `(rust-path-is-file "path")` | Check if file | `(rust-path-is-file "file.txt")`
+| `rust-process-command` | `(rust-process-command "cmd" "args"...)` | Execute command | `(rust-process-command "ls" "-la")`
+| `rust-process-output` | `(rust-process-output "cmd" "args"...)` | Capture output | `(rust-process-output "echo" "hello")`
+| `docker` | `(docker "args" ...)` | Docker Compose | `(docker "compose" "up" "-d")`
+|===
+
+== Value Types
+
+DPM supports these value types:
+
+[cols="1,1,2", options="header"]
+|===
+| Type | Example | Description
+
+| String | `"hello"` | Text data
+| Integer | `42` | Whole numbers
+| Boolean | `true`, `false` | True/false values
+| List | `(1 2 3)` | Ordered collections
+| Nil | `nil` | Null/void value
+|===
+
+== Nested Commands
+
+Commands can be nested:
+
+[source,lisp]
+----
+;; Nested arithmetic
+(+ 1 2 (+ 3 4))  ; => 10
+
+;; Nested environment operations
+(print "Home: " (rust-env-home-dir))
+
+;; Complex nesting
+(rust-fs-write
+  (rust-path-join (rust-env-home-dir) "output.txt")
+  (concat "Dir: " (rust-env-current-dir)))
+----
+
+== Error Handling
+
+Commands return errors as strings:
+
+[source,lisp]
+----
+;; This will error
+(rust-fs-read-to-string "/nonexistent/file")
+
+;; Error output:
+;; Error: No such file or directory (os error 2)
+----
+
+== Command Details
+
+For detailed documentation on each command category:
+
+* xref:core-commands.adoc[Core Commands]
+* xref:environment-commands.adoc[Environment Commands]
+* xref:filesystem-commands.adoc[Filesystem Commands]
+* xref:path-commands.adoc[Path Commands]
+* xref:process-commands.adoc[Process Commands]
+* xref:docker-commands.adoc[Docker Commands]

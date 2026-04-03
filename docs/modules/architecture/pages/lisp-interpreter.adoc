@@ -1,0 +1,229 @@
+= Lisp Interpreter
+:navtitle: Lisp Interpreter
+:description: DPM's core Lisp interpreter architecture
+
+== Overview
+
+DPM's core is a custom Lisp interpreter built on the `lexpr` crate. It provides a powerful, composable command system through S-expressions.
+
+[plantuml, architecture-overview, svg]
+----
+include::attachment$architecture-overview.puml[]
+----
+
+== Value System
+
+The `Value` enum represents all data types in DPM:
+
+[source,rust]
+----
+pub enum Value {
+    Int(i64),      // Integer numbers
+    Str(String),   // Strings
+    Bool(bool),    // Booleans
+    List(Vec<Value>), // Lists/arrays
+    Nil,           // Null/void
+}
+----
+
+=== Value Types
+
+include::partial$value-types.adoc[]
+
+== Parsing
+
+=== S-expression Syntax
+
+DPM uses S-expressions (Lisp syntax):
+
+[source,lisp]
+----
+(command-name arg1 arg2 ...)
+----
+
+=== Parser Features
+
+1. **Parentheses balancing**: Validates matching parentheses
+2. **Comment handling**: Ignores `;` comments
+3. **Nested expressions**: Supports unlimited nesting
+4. **Type inference**: Automatically infers value types
+
+=== Example Parsing
+
+[source,lisp]
+----
+(+ 1 2 3)
+----
+
+Parse result:
+
+[source]
+----
+List [
+  Symbol("+"),
+  Int(1),
+  Int(2),
+  Int(3)
+]
+----
+
+== Evaluation
+
+=== Evaluation Process
+
+1. Parse S-expression into AST
+2. Evaluate arguments recursively
+3. Look up command in registry
+4. Execute command with evaluated arguments
+5. Return result
+
+=== Example Evaluation
+
+[source,lisp]
+----
+(+ 1 (+ 2 3))
+----
+
+Evaluation steps:
+
+[source]
+----
+1. Parse: List[Symbol("+"), Int(1), List[Symbol("+"), Int(2), Int(3)]]
+2. Evaluate args:
+   - Int(1) → 1
+   - List[Symbol("+"), Int(2), Int(3)] → evaluate recursively
+     - Int(2) → 2
+     - Int(3) → 3
+     - (+ 2 3) → 5
+3. Execute: (+ 1 5) → 6
+4. Return: Int(6)
+----
+
+== Command Registry
+
+=== Registration
+
+Commands are registered in a `CommandRegistry`:
+
+[source,rust]
+----
+let mut registry = CommandRegistry::new();
+
+// Register command
+registry.register(MyCommand);
+
+// Register closure
+registry.register_closure(
+    "my-cmd",
+    |args, ctx| {
+        Ok(Value::Str("result".to_string()))
+    }
+);
+----
+
+=== Lookup
+
+During evaluation, commands are looked up by name:
+
+[source,lisp]
+----
+(print "hello")  ; Looks up "print" in registry
+----
+
+== Context
+
+=== Context Structure
+
+The `Context` holds execution state:
+
+[source,rust]
+----
+pub struct Context {
+    registry: CommandRegistry,  // Available commands
+    variables: HashMap<String, Value>,  // Variable storage
+    debug: bool,  // Debug mode flag
+}
+----
+
+=== Variable Storage
+
+Variables are stored in the context:
+
+[source,lisp]
+----
+(rust-env-set "MY_VAR" "hello")  ; Stores in context
+(rust-env-var "MY_VAR")          ; Retrieves from context
+----
+
+=== Debug State
+
+Debug mode controls output:
+
+[source,lisp]
+----
+(debug "name" "value")  ; Outputs debug info
+----
+
+== Error Handling
+
+=== Error Types
+
+DPM provides clear error messages:
+
+[cols="1,2", options="header"]
+|===
+| Error | Description
+
+| Parse error | Invalid S-expression syntax
+| Unknown command | Command not in registry
+| Type mismatch | Wrong value type
+| Runtime error | Command execution failed
+|===
+
+=== Error Format
+
+Errors are returned as strings:
+
+[source,lisp]
+----
+(+ 1 "hello")
+; => Error: Type mismatch: expected integer, got string
+----
+
+== Performance
+
+=== Optimization Features
+
+1. **Lazy evaluation**: Arguments evaluated on demand
+2. **Command caching**: Frequently used commands cached
+3. **Minimal allocations**: Reuses values when possible
+4. **Efficient parsing**: Single-pass parser
+
+=== Benchmarks
+
+Typical performance:
+
+[cols="1,1", options="header"]
+|===
+| Operation | Time
+
+| Parse simple expression | < 1ms
+| Execute simple command | < 1ms
+| Parse complex script | < 10ms
+| Execute complex script | < 100ms
+|===
+
+== Future Enhancements
+
+=== Planned Features
+
+1. **Macros**: Define custom syntax
+2. **Functions**: User-defined functions
+3. **Pattern matching**: Destructuring support
+4. **Tail recursion**: Optimized recursion
+
+== See Also
+
+* xref:command-system.adoc[Command System]
+* xref:extending-commands.adoc[Extending Commands]
+* xref:commands:overview.adoc[Command Reference]

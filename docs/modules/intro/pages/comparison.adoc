@@ -1,0 +1,373 @@
+= Alternatives Comparison
+:navtitle: Comparison
+:description: How DPM compares to other Docker environment management solutions
+
+== Overview
+
+DPM provides a unique approach to Docker environment management by combining:
+
+* *Functional programming* through S-expressions
+* *Cross-platform consistency* via Rust
+* *Security-first design* with supply chain transparency
+* *Extensibility* through command system
+
+Let's compare DPM to common alternatives:
+
+== Comparison Matrix
+
+[cols="1,1,1,1,1", options="header"]
+|===
+| Feature | DPM | Shell Scripts | Makefile | Docker Compose | Task Runner
+
+| *Cross-platform*
+| ✅ Automatic
+| ❌ Manual
+| ❌ Manual
+| ✅ Built-in
+| ✅ Built-in
+
+| *Type safety*
+| ✅ Rust + Value system
+| ❌ None
+| ❌ None
+| ❌ None
+| ❌ None
+
+| *Dependency audit*
+| ✅ cargo-deny
+| ❌ Manual
+| ❌ Manual
+| ✅ Built-in
+| ❌ Manual
+
+| *Extensibility*
+| ✅ Simple traits
+| Limited
+| Limited
+| N/A
+| ✅ Plugins
+
+| *Testability*
+| ✅ Unit tests
+| Hard
+| Hard
+| Limited
+| ✅ Built-in
+
+| *Learning curve*
+| Medium
+| Low
+| Low
+| Low
+| Low
+
+| *Debug output*
+| ✅ Sensitive data masking
+| ❌ Exposes everything
+| ❌ Exposes everything
+| ❌ Exposes everything
+| ❌ Exposes everything
+|===
+
+== Detailed Comparisons
+
+=== vs Shell Scripts
+
+==== Advantages of DPM
+
+[cols="1,2", frame=none]
+|===
+| *Aspect* | *DPM Advantage*
+
+| Cross-platform
+| Automatic path handling, no platform-specific branches
+
+| Type safety
+| Rust's type system catches errors early
+
+| Security
+| Automatic sensitive data masking in debug output
+
+| Maintainability
+| Consistent syntax, no shell quirks
+
+| Testing
+| Unit testable with Rust testing framework
+|===
+
+==== Shell Script Example
+
+[source,bash]
+----
+# Problematic shell script
+#!/bin/bash
+
+# Platform detection (error-prone)
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    HOST_UID=$(id -u)
+    HOST_GID=$(id -g)
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    HOST_UID=1000
+    HOST_GID=1000
+fi
+
+# Sensitive data exposed in debug
+export DATABASE_PASSWORD="secret123"
+echo "DATABASE_PASSWORD=$DATABASE_PASSWORD"  # Leaked!
+
+# Path handling (fragile)
+CONFIG_PATH="$HOME/.config/myapp"
+if [[ ! -d "$CONFIG_PATH" ]]; then
+    mkdir -p "$CONFIG_PATH"
+fi
+
+# Docker execution
+docker compose up -d
+----
+
+==== DPM Equivalent
+
+[source,lisp]
+----
+;; Clean, cross-platform DPM script
+(rust-env-set "HOST_UID" (rust-process-output "id" "-u"))
+(rust-env-set "HOST_GID" (rust-process-output "id" "-g"))
+
+;; Sensitive data protected
+(rust-env-set "DATABASE_PASSWORD" (rust-fs-read-to-string "/secrets/db_password"))
+
+;; Path handling (automatic)
+(rust-fs-create-dir (rust-path-join (rust-env-var "HOME") ".config" "myapp"))
+
+;; Docker execution
+(docker "compose" "up" "-d")
+----
+
+=== vs Makefile
+
+==== Advantages of DPM
+
+[cols="1,2", frame=none]
+|===
+| *Aspect* | *DPM Advantage*
+
+| Cross-platform
+| Automatic, no platform detection code needed
+
+| S-expressions
+| More expressive than Make syntax
+
+| Extensibility
+| Trait-based system vs make target system
+
+| Debugging
+| Built-in debug command with masking
+
+| Integration
+| Native Docker integration
+|===
+
+==== Makefile Example
+
+[source,makefile]
+----
+# Makefile
+.PHONY: up down test
+
+# Platform detection (complex)
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+    HOST_UID := $(shell id -u)
+    HOST_GID := $(shell id -g)
+endif
+ifeq ($(UNAME_S),Darwin)
+    HOST_UID := 1000
+    HOST_GID := 1000
+endif
+
+export HOST_UID HOST_GID
+
+up:
+	docker compose up -d
+
+down:
+	docker compose down
+
+test:
+	docker compose run --rm app test
+----
+
+==== DPM Equivalent
+
+[source,lisp]
+----
+;; DPM script (cleaner, more expressive)
+(rust-env-set "HOST_UID" (rust-process-output "id" "-u"))
+(rust-env-set "HOST_GID" (rust-process-output "id" "-g"))
+
+;; Commands are composable
+(pipe
+  (rust-env-var "HOST_UID")
+  (print "Running as UID: " _))
+----
+
+=== vs Task Runner (e.g., Taskfile)
+
+==== Advantages of DPM
+
+[cols="1,2", frame=none]
+|===
+| *Aspect* | *DPM Advantage*
+
+| Syntax
+| S-expressions vs YAML/Go templates
+
+| Cross-platform
+| Automatic vs manual OS detection
+
+| Security
+| Built-in sensitive data masking
+
+| Type safety
+| Rust's type system
+
+| Dependencies
+| cargo-deny audit trail
+|===
+
+==== Taskfile Example
+
+[source,yaml]
+----
+# Taskfile.yml
+version: '3'
+
+tasks:
+  up:
+    desc: Start services
+    cmds:
+      - docker compose up -d
+    env:
+      HOST_UID:
+        sh: id -u
+      HOST_GID:
+        sh: id -g
+
+  test:
+    desc: Run tests
+    cmds:
+      - docker compose run --rm app test
+----
+
+==== DPM Equivalent
+
+[source,lisp]
+----
+;; DPM script
+(rust-env-set "HOST_UID" (rust-process-output "id" "-u"))
+(rust-env-set "HOST_GID" (rust-process-output "id" "-g"))
+
+;; Commands with help system
+(usage "up" "Start services")
+(docker "compose" "up" "-d")
+
+(usage "test" "Run tests")
+(docker "compose" "run" "--rm" "app" "test")
+----
+
+=== vs Docker Compose (alone)
+
+==== Advantages of DPM
+
+[cols="1,2", frame=none]
+|===
+| *Aspect* | *DPM Advantage*
+
+| Environment management
+| Dynamic, scriptable environment setup
+
+| Cross-platform
+| Automatic Docker socket detection
+
+| Security
+| Sensitive data masking
+
+| Extensibility
+| Add custom commands beyond Docker
+
+| Integration
+| Works with any Docker Compose setup
+|===
+
+==== Docker Compose Limitations
+
+Docker Compose is excellent for defining services, but:
+
+* Environment setup requires external scripts
+* No built-in cross-platform handling
+* Sensitive data in plain text
+* Limited extensibility
+
+==== DPM + Docker Compose
+
+DPM complements Docker Compose perfectly:
+
+[source,lisp]
+----
+;; DPM handles environment setup
+(rust-env-set "PROJECT_NAME" (rust-path-filename (rust-env-current-dir)))
+(rust-env-set "HOST_UID" (rust-process-output "id" "-u"))
+(rust-env-set "HOST_GID" (rust-process-output "id" "-g"))
+(rust-env-set "DATABASE_PASSWORD" (rust-fs-read-to-string "/secrets/db_password"))
+
+;; Docker Compose runs the services
+(docker "compose" "up" "-d")
+----
+
+== When to Choose DPM
+
+=== Choose DPM If You:
+
+* Need consistent behavior across Linux, macOS, and Windows
+* Want to reduce environment setup complexity
+* Need security features (sensitive data masking, supply chain audit)
+* Prefer functional programming style
+* Need extensible command system
+* Want unit testable scripts
+
+=== Consider Alternatives If You:
+
+* Only work on one platform (shell scripts might be simpler)
+* Need complex build system features (Make might be better)
+* Want minimal learning curve (shell scripts or Make are familiar)
+
+== Migration Path
+
+=== From Shell Scripts
+
+1. Identify environment setup code
+2. Convert to DPM S-expressions
+3. Replace platform detection with DPM's automatic handling
+4. Add sensitive data protection
+
+=== From Makefile
+
+1. Convert make targets to DPM commands
+2. Replace shell commands with DPM equivalents
+3. Add cross-platform handling
+4. Implement security features
+
+=== From Task Runner
+
+1. Convert YAML tasks to DPM commands
+2. Replace Go templates with S-expressions
+3. Leverage DPM's cross-platform capabilities
+4. Add security features
+
+== Getting Started
+
+Ready to try DPM?
+
+* xref:getting-started:installation.adoc[Installation] — Get DPM installed
+* xref:getting-started:first-command.adoc[First Command] — Run your first DPM script
+* xref:use-cases.adoc[Use Cases] — See real-world examples

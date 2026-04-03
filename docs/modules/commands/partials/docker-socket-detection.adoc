@@ -1,0 +1,30 @@
+// Docker Socket Detection
+// This partial describes how DPM automatically detects Docker socket locations
+// Usage: include::partial$docker-socket-detection.adoc[]
+
+=== Docker Socket Detection
+
+DPM automatically detects Docker socket locations:
+
+[cols="1,1,2", options="header"]
+|===
+| Platform | Socket Path | Notes
+
+| Linux (standard)
+| `/var/run/docker.sock`
+| Standard Docker installation
+
+| Linux (XDG)
+| `$XDG_RUNTIME_DIR/docker.sock`
+| XDG Base Directory compliant
+
+| macOS (Docker Desktop)
+| `~/.docker/desktop/docker.sock`
+| Docker Desktop for Mac
+
+| Windows (Docker Desktop)
+| `//var/run/docker.sock`
+| WSL2 integration
+|===
+
+NOTE: DPM handles socket detection automatically - no manual configuration needed.

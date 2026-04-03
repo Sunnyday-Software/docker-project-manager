@@ -1,0 +1,123 @@
+= Why DPM?
+:navtitle: Why DPM?
+:description: Understand the problem DPM solves for Docker environment management
+
+== The Docker Environment Management Problem
+
+Managing Docker environments across projects and teams involves constant friction:
+
+=== Repetitive Environment Variable Juggling
+
+Every project needs environment variables set before running Docker Compose:
+
+[source,bash]
+----
+# Same pattern repeated in every project
+export PROJECT_NAME=$(basename $(pwd))
+export HOST_UID=$(id -u)
+export HOST_GID=$(id -g)
+export DOCKER_BUILDKIT=1
+docker compose up -d
+----
+
+=== Platform-Specific Script Hell
+
+Different platforms require different approaches:
+
+[source,bash]
+----
+# Linux
+export HOST_UID=$(id -u)
+export HOST_GID=$(id -g)
+
+# macOS (different!)
+export HOST_UID=1000
+export HOST_GID=1000
+
+# Windows (yet another approach)
+# Different command syntax entirely
+----
+
+=== Security Sensitive Configuration
+
+* Passwords in plain text files
+* API keys scattered across scripts
+* No audit trail of who accessed what
+* Debug output leaks sensitive data
+
+=== Version Tracking Chaos
+
+* "Which version of this script are you using?"
+* "Where did this environment variable come from?"
+* "Is this config file still needed?"
+
+== The DPM Solution
+
+=== Unified, Composable Commands
+
+DPM provides a consistent S-expression interface that works everywhere:
+
+[source,lisp]
+----
+;; Set environment variables
+(rust-env-set "PROJECT_NAME" (rust-path-filename (rust-env-current-dir)))
+(rust-env-set "HOST_UID" (rust-process-output "id" "-u"))
+(rust-env-set "HOST_GID" (rust-process-output "id" "-g"))
+
+;; Run Docker Compose with proper environment
+(docker "compose" "up" "-d")
+----
+
+=== Cross-Platform by Design
+
+No more platform-specific branches:
+
+[cols="1,2", frame=none]
+|===
+| *Challenge* | *DPM Solution*
+
+| Path separators (`\` vs `/`) | `(rust-path-join "a" "b")` → handles automatically
+| Line endings (CRLF vs LF) | File ops normalize transparently
+| Docker socket locations | Auto-detects standard, Desktop, XDG paths
+| User/group IDs | `(rust-process-output "id" "-u")` works consistently
+|===
+
+=== Security Without Friction
+
+* *Automatic sensitive data masking*: Debug output hides passwords, tokens, API keys
+* *Dependency auditing*: `cargo-deny` ensures only trusted dependencies
+* *Supply chain transparency*: Full SBOM via GitHub dependency graph
+
+== Value Proposition by Role
+
+=== For DevOps Engineers
+
+* *Reduce complexity*: One tool instead of shell scripts, batch files, Makefiles
+* *Standardize workflows*: Consistent interface across all projects
+* *Automate safely*: Scriptable with built-in security features
+
+=== For Development Teams
+
+* *Onboard faster*: New team members learn one tool
+* *Reduce errors*: Type-safe operations, cross-platform consistency
+* *Focus on code*: Less time debugging environment issues
+
+=== For Security Teams
+
+* *Audit ready*: Full dependency tracking, license compliance
+* *Sensitive data protection*: Automatic masking in debug output
+* *Supply chain visibility*: Clear SBOM, vulnerability alerts
+
+=== For Management
+
+* *Reduce technical debt*: Standardized, maintainable workflows
+* *Improve productivity*: Less time on environment setup
+* *Lower risk*: Security-first design, transparent supply chain
+
+== Getting Started
+
+Ready to transform your Docker workflow?
+
+* xref:getting-started:installation.adoc[Installation] — Get up and running in minutes
+* xref:use-cases.adoc[Use Cases] — See real-world examples
+* xref:commands:overview.adoc[Commands] — Explore the full command reference

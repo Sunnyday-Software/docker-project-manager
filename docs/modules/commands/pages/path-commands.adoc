@@ -1,0 +1,324 @@
+= Path Commands
+:navtitle: Path Commands
+:description: Cross-platform path manipulation commands
+
+== Overview
+
+Path commands provide cross-platform path handling, automatically using correct separators (`/` vs `\`) based on the operating system.
+
+== rust-path-join
+
+Joins path components.
+
+=== Syntax
+
+[source,lisp]
+----
+(rust-path-join "component1" "component2" ...)
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `component1, component2, ...` | Path components to join
+|===
+
+=== Return Value
+
+Returns joined path as string.
+
+=== Examples
+
+[source,lisp]
+----
+(rust-path-join "/home" "user" "documents")  ; => "/home/user/documents"
+(rust-path-join "C:" "Users" "John")  ; => "C:\Users\John" (on Windows)
+(rust-path-join (rust-env-home-dir) ".config" "myapp")  ; => "/home/user/.config/myapp"
+----
+
+== rust-path-parent
+
+Gets parent directory.
+
+=== Syntax
+
+[source,lisp]
+----
+(rust-path-parent "path")
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `path` | Path to get parent of
+|===
+
+=== Return Value
+
+Returns parent directory path as string.
+
+=== Examples
+
+[source,lisp]
+----
+(rust-path-parent "/home/user/file.txt")  ; => "/home/user"
+(rust-path-parent "/home/user")  ; => "/home"
+(rust-path-parent "file.txt")  ; => ""
+----
+
+== rust-path-filename
+
+Gets filename component.
+
+=== Syntax
+
+[source,lisp]
+----
+(rust-path-filename "path")
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `path` | Path to get filename from
+|===
+
+=== Return Value
+
+Returns filename as string.
+
+=== Examples
+
+[source,lisp]
+----
+(rust-path-filename "/home/user/file.txt")  ; => "file.txt"
+(rust-path-filename "/home/user")  ; => "user"
+(rust-path-filename "file.txt")  ; => "file.txt"
+----
+
+== rust-path-extension
+
+Gets file extension.
+
+=== Syntax
+
+[source,lisp]
+----
+(rust-path-extension "path")
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `path` | Path to get extension from
+|===
+
+=== Return Value
+
+Returns extension as string (without dot).
+
+=== Examples
+
+[source,lisp]
+----
+(rust-path-extension "document.pdf")  ; => "pdf"
+(rust-path-extension "file.txt")  ; => "txt"
+(rust-path-extension "/path/to/file")  ; => ""
+----
+
+== rust-path-exists
+
+Checks if path exists.
+
+=== Syntax
+
+[source,lisp]
+----
+(rust-path-exists "path")
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `path` | Path to check
+|===
+
+=== Return Value
+
+Returns boolean (true/false).
+
+=== Examples
+
+[source,lisp]
+----
+(rust-path-exists ".")  ; => true
+(rust-path-exists "/tmp")  ; => true
+(rust-path-exists "/nonexistent")  ; => false
+----
+
+== rust-path-is-dir
+
+Checks if path is directory.
+
+=== Syntax
+
+[source,lisp]
+----
+(rust-path-is-dir "path")
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `path` | Path to check
+|===
+
+=== Return Value
+
+Returns boolean (true/false).
+
+=== Examples
+
+[source,lisp]
+----
+(rust-path-is-dir "/tmp")  ; => true
+(rust-path-is-dir "/etc/hosts")  ; => false
+----
+
+== rust-path-is-file
+
+Checks if path is file.
+
+=== Syntax
+
+[source,lisp]
+----
+(rust-path-is-file "path")
+----
+
+=== Parameters
+
+[cols="1,3", frame=none]
+|===
+| *Parameter* | *Description*
+
+| `path` | Path to check
+|===
+
+=== Return Value
+
+Returns boolean (true/false).
+
+=== Examples
+
+[source,lisp]
+----
+(rust-path-is-file "/etc/hosts")  ; => true
+(rust-path-is-file "/tmp")  ; => false
+----
+
+== Cross-Platform Considerations
+
+=== Path Separators
+
+DPM handles path separators automatically:
+
+[cols="1,1,1", options="header"]
+|===
+| Platform | Separator | Example
+
+| Linux | `/` | `/home/user/file`
+| macOS | `/` | `/Users/user/file`
+| Windows | `\` | `C:\Users\John\file`
+|===
+
+=== rust-path-join Example
+
+[source,lisp]
+----
+;; This works on all platforms
+(rust-path-join "home" "user" "documents")
+; Linux/macOS: "/home/user/documents"
+; Windows: "home\user\documents"
+----
+
+== Practical Examples
+
+=== Project Paths
+
+[source,lisp]
+----
+;; Get project root
+(rust-env-current-dir)
+
+;; Get project name
+(rust-path-filename (rust-env-current-dir))
+
+;; Get parent of project
+(rust-path-parent (rust-env-current-dir))
+
+;; Build config path
+(rust-path-join (rust-env-current-dir) "config" "settings.json")
+----
+
+=== Configuration Files
+
+[source,lisp]
+----
+;; Build config paths
+(rust-path-join (rust-env-home-dir) ".config" "myapp" "config.json")
+(rust-path-join (rust-env-current-dir) "config" "development.json")
+----
+
+=== File Operations
+
+[source,lisp]
+----
+;; Check file extension
+(if (= (rust-path-extension "document.pdf") "pdf")
+  (print "PDF document")
+  (print "Not a PDF"))
+
+;; Build output path
+(rust-path-join "output" (concat (rust-path-filename "input.txt") ".processed"))
+----
+
+== Error Handling
+
+Path commands handle invalid paths gracefully:
+
+[source,lisp]
+----
+;; Empty path
+(rust-path-parent "")  ; => ""
+
+;; No extension
+(rust-path-extension "file")  ; => ""
+
+;; Root path
+(rust-path-parent "/")  ; => "/"
+----
+
+== See Also
+
+* xref:core-commands.adoc[Core Commands]
+* xref:filesystem-commands.adoc[Filesystem Commands]
+* xref:environment-commands.adoc[Environment Commands]
