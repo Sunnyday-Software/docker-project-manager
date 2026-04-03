@@ -1,5 +1,5 @@
 @startuml command-system
-!theme cerulean
+!theme reddress-lightred
 
 interface Command {
   +execute(args: Vec<Value>, ctx: &mut Context) -> Result<Value, String>

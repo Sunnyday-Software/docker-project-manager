@@ -1,5 +1,5 @@
 @startuml security-layers
-!theme cerulean
+!theme reddress-lightred
 
 skinparam package {
   BackgroundColor<<layer>> #E8F5E9

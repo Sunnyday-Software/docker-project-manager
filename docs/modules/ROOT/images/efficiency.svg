@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-labelledby="t d">
+  <title id="t">Efficiency</title>
+  <desc id="d">A streamlined workflow with three inputs resolving into one clear output.</desc>
+  <rect width="64" height="64" rx="18" fill="#F8FAFC"/>
+  <path d="M18 20h10M18 32h18M18 44h10" stroke="#0F172A" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="14" cy="20" r="2.5" fill="#2563EB"/><circle cx="14" cy="32" r="2.5" fill="#0EA5E9"/><circle cx="14" cy="44" r="2.5" fill="#14B8A6"/>
+  <path d="M34 20l10 12-10 12M30 32h14" stroke="#2563EB" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

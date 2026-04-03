@@ -40,7 +40,7 @@ dpm --file my-script.lisp
 
 [cols="1,1,1", frame=none, grid=cols]
 |===
-| image:images/efficiency.svg[Efficiency,48,48] | image:images/security.svg[Security,48,48] | image:images/flexibility.svg[Flexibility,48,48]
+| image:efficiency.svg[Efficiency,48,48] | image:security.svg[Security,48,48] | image:flexibility.svg[Flexibility,48,48]
 
 | *Reduce Complexity* | *Audit-Ready* | *Adapt to Any Stack*
 | Single interface for Docker env management | Full dependency audit trail | Works with any Docker Compose setup
@@ -95,9 +95,9 @@ Ready to transform your Docker workflow?
 
 Get DPM for your platform:
 
-[cols="1,1", frame=none]
+[cols="1,1,1", frame=none]
 |===
-| image:images/linux.svg[Linux,48,48] | image:images/macos.svg[macOS,48,48] | image:images/windows.svg[Windows,48,48]
+| image:https://img.shields.io/badge/Linux-Supported-FCC624?logo=linux&logoColor=black[Linux] | image:https://img.shields.io/badge/macOS-Supported-111827?logo=apple&logoColor=white[macOS] | image:https://img.shields.io/badge/Windows-Supported-0078D4?logo=windows&logoColor=white[Windows]
 
 | xref:deployment:building.adoc[Linux Build] | xref:deployment:building.adoc[macOS Build] | xref:deployment:building.adoc[Windows Build]
 |===

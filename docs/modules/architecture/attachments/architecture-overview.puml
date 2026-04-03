@@ -1,5 +1,5 @@
 @startuml architecture-overview
-!theme cerulean
+!theme reddress-lightred
 
 package "CLI Layer" {
   [main.rs]
